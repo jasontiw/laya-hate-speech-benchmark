@@ -9,12 +9,14 @@ from typing import Any, Dict
 
 import pandas as pd
 
+from ..config import TASK_THREE_CLASS
 from .base import Classifier, Prediction
 
 
 class MajorityClassifier(Classifier):
     key = "majority"
     display_name = "Majority baseline"
+    task = TASK_THREE_CLASS
 
     def __init__(self) -> None:
         self.majority: str | None = None
@@ -32,6 +34,3 @@ class MajorityClassifier(Classifier):
 
     def details(self) -> Dict[str, Any]:
         return {"majority_class": self.majority, "train_class_distribution": self.distribution}
-
-    def __str__(self) -> str:
-        return f"majority (always predicts {self.majority!r})"

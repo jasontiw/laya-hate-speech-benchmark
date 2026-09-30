@@ -15,7 +15,7 @@ import re
 import time
 import urllib.request
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -142,6 +142,7 @@ def build_split(df: pd.DataFrame, cfg: Config, log: Logger = _noop) -> Tuple[pd.
 
     rng = np.random.default_rng(cfg.split.seed)
     test_groups: set[int] = set()
+    validation_groups: set[int] = set()
     per_class_groups: Dict[str, int] = {}
     for label in CANONICAL_LABELS:
         # np.array(...) copies: Index.to_numpy() can return a read-only view (pandas CoW),
@@ -150,12 +151,25 @@ def build_split(df: pd.DataFrame, cfg: Config, log: Logger = _noop) -> Tuple[pd.
         rng.shuffle(groups)
         per_class_groups[label] = int(groups.size)
         n_test = int(round(groups.size * cfg.split.test_size))
+        n_validation = int(round(groups.size * cfg.split.validation_size))
+        # Test first, then validation: adding validation does not move any test row,
+        # so earlier runs stay comparable.
         test_groups.update(int(g) for g in groups[:n_test])
+        validation_groups.update(int(g) for g in groups[n_test:n_test + n_validation])
 
-    frame["split"] = np.where(frame["group_id"].isin(test_groups), "test", "train")
+    def _assign(group_id: int) -> str:
+        if group_id in test_groups:
+            return "test"
+        if group_id in validation_groups:
+            return "validation"
+        return "train"
 
-    train_ids = sorted(int(i) for i in frame.loc[frame["split"] == "train", "id"])
-    test_ids = sorted(int(i) for i in frame.loc[frame["split"] == "test", "id"])
+    frame["split"] = [_assign(int(group)) for group in frame["group_id"]]
+
+    def _ids(part: str) -> List[int]:
+        return sorted(int(i) for i in frame.loc[frame["split"] == part, "id"])
+
+    train_ids, validation_ids, test_ids = _ids("train"), _ids("validation"), _ids("test")
     signature = hashlib.sha256((",".join(str(i) for i in test_ids)).encode("utf-8")).hexdigest()
 
     def _class_counts(part: pd.DataFrame) -> Dict[str, int]:
@@ -163,10 +177,12 @@ def build_split(df: pd.DataFrame, cfg: Config, log: Logger = _noop) -> Tuple[pd.
         return {label: int(counts.get(label, 0)) for label in CANONICAL_LABELS}
 
     train_part = frame[frame["split"] == "train"]
+    validation_part = frame[frame["split"] == "validation"]
     test_part = frame[frame["split"] == "test"]
     info: Dict[str, Any] = {
         "seed": cfg.split.seed,
         "test_size": cfg.split.test_size,
+        "validation_size": cfg.split.validation_size,
         "grouping": "normalized text (duplicate tweets kept in the same split)",
         "normalize": {
             "lowercase": cfg.split.normalize.lowercase,
@@ -180,16 +196,19 @@ def build_split(df: pd.DataFrame, cfg: Config, log: Logger = _noop) -> Tuple[pd.
         "total_groups": int(frame["group_id"].nunique()),
         "groups_per_class": per_class_groups,
         "train_rows": int(len(train_part)),
+        "validation_rows": int(len(validation_part)),
         "test_rows": int(len(test_part)),
         "train_class_counts": _class_counts(train_part),
+        "validation_class_counts": _class_counts(validation_part),
         "test_class_counts": _class_counts(test_part),
         "test_id_sha256": signature,
         "train_ids": train_ids,
+        "validation_ids": validation_ids,
         "test_ids": test_ids,
     }
     log(
-        "split: train=%d test=%d groups=%d signature=%s"
-        % (len(train_part), len(test_part), info["total_groups"], signature[:12])
+        "split: train=%d validation=%d test=%d groups=%d signature=%s"
+        % (len(train_part), len(validation_part), len(test_part), info["total_groups"], signature[:12])
     )
     return frame, info
 

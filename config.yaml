@@ -21,10 +21,13 @@ dataset:
     2: neither
 
 split:
+  # Test first, then validation. Validation is carved out of the training side, so
+  # adding it does not move a single test row: earlier runs stay comparable.
   test_size: 0.2
+  validation_size: 0.15
   seed: 42
-  # Normalization is used ONLY to detect duplicate/near-duplicate tweets so that
-  # copies cannot straddle the train/test boundary. Models always see the raw tweet.
+  # Normalization is used ONLY to detect duplicate tweets so that copies cannot
+  # straddle a split boundary. Models always see the raw tweet.
   normalize:
     lowercase: true
     strip_urls: true
@@ -45,7 +48,15 @@ models:
     sublinear_tf: true
     max_iter: 1000
     C: 1.0
-    class_weight: null
+    # The dataset is ~77% 'offensive language'. Comparing these two separates
+    # "the model is conservative about hate speech" from "the training prior is".
+    variants:
+      - key: tfidf
+        class_weight: null
+        note: plain pipeline, no class weighting
+      - key: tfidf_balanced
+        class_weight: balanced
+        note: class weights inversely proportional to class frequency
 
   laya:
     enabled: true
@@ -55,11 +66,59 @@ models:
     revision: null
     device: null          # null -> cuda, else mps, else cpu
     max_len: 512
-    instructions: Classify the language of this message.
-    criteria:
-      hate speech: language attacking or expressing hostility toward a protected group.
-      offensive language: rude, insulting, profane, or abusive language that does not constitute hate speech.
-      neither: language that does not belong to either category.
+    # Batched inference: states per forward pass, and length grouping inside a pass.
+    batch_size: 64
+    sort_by_length: true
+    # A zero-shot answer depends on the prompt AND on the question type, so the four
+    # formulations below are compared. None of them is selected using the test set.
+    variants:
+      # L1 — the PRD's three-class formulation.
+      - key: laya
+        label: L1 3-class choice (PRD wording)
+        task: three_class
+        question_type: choice
+        instructions: Classify the language of this message.
+        criteria:
+          hate speech: language attacking or expressing hostility toward a protected group.
+          offensive language: rude, insulting, profane, or abusive language that does not constitute hate speech.
+          neither: language that does not belong to either category.
+
+      # L4 — same three classes, but the hate/offensive boundary is stated explicitly.
+      - key: laya_semantic
+        label: L4 3-class choice (explicit definitions)
+        task: three_class
+        question_type: choice
+        note: makes the hate-vs-offensive boundary explicit and reproducible
+        instructions: >-
+          Classify the tweet into exactly one category.
+        criteria:
+          hate speech: >-
+            language attacking, degrading, threatening or expressing hostility toward a protected
+            group or people because of their group identity
+          offensive language: >-
+            profanity, insults, vulgarity or abusive language that is not directed at a protected
+            group because of group identity
+          neither: the text does not meet either definition
+
+      # L2 — binary, as a two-option choice (does not depend on noul behaviour).
+      - key: laya_binary
+        label: L2 2-class choice (hate / not hate)
+        task: hate_binary
+        question_type: choice
+        instructions: Is this text hate speech, or not hate speech?
+        criteria:
+          hate speech: >-
+            the text expresses hatred, hostility or demeaning content toward a protected group
+          not hate speech: >-
+            the text does not express hate speech toward a protected group
+
+      # L3 — binary through the noul primitive (a probability you threshold yourself).
+      # No criteria: noul always carries false/true, as the built-in presets do.
+      - key: laya_noul
+        label: L3 2-class noul (is_hate)
+        task: hate_binary
+        question_type: noul
+        instructions: Is this text hate speech?
 
   hatexplain:
     enabled: true
@@ -67,12 +126,35 @@ models:
     revision: null
     device: null
     max_length: 128
+    batch_size: 64
 
 inference:
-  # Untimed calls made before measuring latency (first call warms up CUDA kernels).
+  # "batch" feeds the test set through predict_batch (order-preserving) and measures
+  # single-item latency on a sample, so throughput and latency are never conflated.
+  # "single" loops predict_one over the whole test set.
+  predict_mode: batch
+  latency_sample: 500
+  # Untimed calls before measuring latency (first call warms up CUDA kernels).
   warmup: 5
+
+stats:
+  # Percentile bootstrap over the test set, for every headline metric.
+  bootstrap_samples: 1000
+  seed: 42
+  confidence: 0.95
+
+calibration:
+  # Measured on the validation split. Lower Brier and ECE are better.
+  enabled: true
+  bins: 10
 
 output:
   results_dir: results
   report_dir: report
   error_samples_per_category: 50
+  # Representative errors printed in the report, per category (auto-selected).
+  error_examples_per_category: 3
+  # "redacted" withholds the tweet text of those errors: they are hate speech and the
+  # report may be published. The verbatim rows stay in the git-ignored
+  # results/error_analysis.csv. Set "full" for a local-only report.
+  error_examples_in_report: redacted

@@ -1,7 +1,13 @@
-"""Model registry for the benchmark."""
+"""Model registry for the benchmark.
+
+The registry is built from the configuration rather than hardcoded, because a run
+compares *variants* as well as models: TF-IDF with and without balanced class
+weights, and several Laya prompt formulations. Each variant gets its own key, so
+it becomes its own row in every artifact.
+"""
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..config import Config
 from .base import Classifier, ModelResult
@@ -17,33 +23,54 @@ __all__ = [
     "TfidfLogisticClassifier",
     "LayaClassifier",
     "HateXplainClassifier",
+    "available_model_keys",
     "build_models",
 ]
 
-# Fixed order: the comparison table reads the same way on every run.
-MODEL_ORDER: Tuple[str, ...] = ("majority", "tfidf", "laya", "hatexplain")
+
+def available_model_keys(cfg: Config) -> List[str]:
+    """The model keys this configuration would run, in reporting order."""
+    keys: List[str] = []
+    if cfg.majority.enabled:
+        keys.append("majority")
+    if cfg.tfidf.enabled:
+        keys.extend(variant.key for variant in cfg.tfidf.variants)
+    if cfg.laya.enabled:
+        keys.extend(variant.key for variant in cfg.laya.variants)
+    if cfg.hatexplain.enabled:
+        keys.append("hatexplain")
+    return keys
 
 
-def build_models(cfg: Config, only: List[str] | None = None) -> List[Tuple[str, Classifier]]:
-    """Instantiate the enabled models, skipping any name not in ``only``."""
+def build_models(cfg: Config, only: Optional[List[str]] = None) -> List[Tuple[str, Classifier]]:
+    """Instantiate the enabled models and variants, skipping any name not in ``only``."""
     requested = set(only) if only else None
-    builders = {
-        "majority": lambda: MajorityClassifier(),
-        "tfidf": lambda: TfidfLogisticClassifier(cfg.tfidf),
-        "laya": lambda: LayaClassifier(cfg.laya),
-        "hatexplain": lambda: HateXplainClassifier(cfg.hatexplain),
-    }
-    enabled: Dict[str, bool] = {
-        "majority": cfg.majority.enabled,
-        "tfidf": cfg.tfidf.enabled,
-        "laya": cfg.laya.enabled,
-        "hatexplain": cfg.hatexplain.enabled,
-    }
     models: List[Tuple[str, Classifier]] = []
-    for key in MODEL_ORDER:
-        if not enabled.get(key, False):
-            continue
+
+    def add(key: str, classifier: Classifier) -> None:
         if requested is not None and key not in requested:
-            continue
-        models.append((key, builders[key]()))
+            return
+        models.append((key, classifier))
+
+    if cfg.majority.enabled:
+        add("majority", MajorityClassifier())
+    if cfg.tfidf.enabled:
+        for variant in cfg.tfidf.variants:
+            add(variant.key, TfidfLogisticClassifier(cfg.tfidf, variant))
+    if cfg.laya.enabled:
+        for variant in cfg.laya.variants:
+            add(variant.key, LayaClassifier(cfg.laya, variant))
+    if cfg.hatexplain.enabled:
+        add("hatexplain", HateXplainClassifier(cfg.hatexplain))
     return models
+
+
+def display_names(cfg: Config) -> Dict[str, str]:
+    """Convenience map of key -> human name, without instantiating anything."""
+    names: Dict[str, str] = {"majority": "Majority baseline", "hatexplain": "HateXplain BERT"}
+    for variant in cfg.tfidf.variants:
+        suffix = "" if not variant.class_weight else " (class_weight=%s)" % variant.class_weight
+        names[variant.key] = "TF-IDF + Logistic Regression" + suffix
+    for variant in cfg.laya.variants:
+        names[variant.key] = "Laya (zero-shot, %s)" % variant.label
+    return names

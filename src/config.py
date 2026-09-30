@@ -13,17 +13,37 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 
 import yaml
 
-# The canonical three classes, fixed forever in this order. Every model's output
-# is mapped onto them (see src/models/hatexplain.py for the HateXplain mapping).
+# The canonical three classes, fixed forever in this order.
 CANONICAL_LABELS: List[str] = ["hate speech", "offensive language", "neither"]
 LABEL_INDEX: Dict[str, int] = {label: i for i, label in enumerate(CANONICAL_LABELS)}
 HATE_LABEL = "hate speech"
+NOT_HATE_LABELS: List[str] = ["offensive language", "neither"]
+
+# Tasks a model can solve. A binary model answers hate-vs-rest only, so it has no
+# three-class confusion matrix and is excluded from the three-class table.
+TASK_THREE_CLASS = "three_class"
+TASK_HATE_BINARY = "hate_binary"
 
 # Results columns use a short slug per class (PRD section 13).
 PROBABILITY_SLUG: Dict[str, str] = {
     "hate speech": "hate",
     "offensive language": "offensive",
     "neither": "neither",
+}
+
+# How each model relates to the Davidson training split. Reported so a reader never
+# mistakes this benchmark for a controlled architecture comparison.
+TRAINING_REGIME: Dict[str, Dict[str, Any]] = {
+    "majority": {"regime": "Baseline", "trained_on_davidson": False,
+                 "note": "Predicts the most frequent training label."},
+    "tfidf": {"regime": "Supervised (fit here)", "trained_on_davidson": True,
+              "note": "TF-IDF (1-2 grams) + Logistic Regression, fit on the train split."},
+    "tfidf_balanced": {"regime": "Supervised (fit here)", "trained_on_davidson": True,
+                       "note": "Same pipeline with class_weight='balanced'."},
+    "laya": {"regime": "Zero-shot", "trained_on_davidson": False,
+             "note": "Published checkpoint, hand-written question, no fine-tuning."},
+    "hatexplain": {"regime": "Pretrained externally", "trained_on_davidson": False,
+                   "note": "HateXplain BERT, trained on the HateXplain dataset, labels remapped."},
 }
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -55,6 +75,9 @@ class NormalizeConfig:
 @dataclass
 class SplitConfig:
     test_size: float = 0.2
+    # Carved out of the training side, so the test set is unchanged and every
+    # number stays comparable with earlier runs.
+    validation_size: float = 0.15
     seed: int = 42
     normalize: NormalizeConfig = field(default_factory=NormalizeConfig)
 
@@ -62,6 +85,13 @@ class SplitConfig:
 @dataclass
 class MajorityConfig:
     enabled: bool = True
+
+
+@dataclass
+class TfidfVariant:
+    key: str = "tfidf"
+    class_weight: Optional[str] = None
+    note: str = ""
 
 
 @dataclass
@@ -73,7 +103,18 @@ class TfidfConfig:
     sublinear_tf: bool = True
     max_iter: int = 1000
     C: float = 1.0
-    class_weight: Optional[str] = None
+    variants: List[TfidfVariant] = field(default_factory=lambda: [TfidfVariant()])
+
+
+@dataclass
+class LayaVariant:
+    key: str = "laya"
+    label: str = "current"
+    task: str = TASK_THREE_CLASS
+    question_type: str = "choice"
+    instructions: str = "Classify the language of this message."
+    criteria: Dict[str, str] = field(default_factory=dict)
+    note: str = ""
 
 
 @dataclass
@@ -84,8 +125,11 @@ class LayaConfig:
     revision: Optional[str] = None
     device: Optional[str] = None
     max_len: int = 512
-    instructions: str = "Classify the language of this message."
-    criteria: Dict[str, str] = field(default_factory=dict)
+    # Batched inference (Laya's predict_batch): states per forward pass, and whether
+    # to group similar lengths inside a pass.
+    batch_size: int = 64
+    sort_by_length: bool = True
+    variants: List[LayaVariant] = field(default_factory=lambda: [LayaVariant()])
 
 
 @dataclass
@@ -95,6 +139,29 @@ class HateXplainConfig:
     revision: Optional[str] = None
     device: Optional[str] = None
     max_length: int = 128
+    batch_size: int = 64
+
+
+@dataclass
+class InferenceConfig:
+    # "batch" feeds the whole test set through predict_batch (fast, order-preserving)
+    # and measures single-item latency on a sample. "single" loops predict_one.
+    predict_mode: str = "batch"
+    latency_sample: int = 500
+    warmup: int = 5
+
+
+@dataclass
+class StatsConfig:
+    bootstrap_samples: int = 1000
+    seed: int = 42
+    confidence: float = 0.95
+
+
+@dataclass
+class CalibrationConfig:
+    enabled: bool = True
+    bins: int = 10
 
 
 @dataclass
@@ -102,6 +169,11 @@ class OutputConfig:
     results_dir: str = "results"
     report_dir: str = "report"
     error_samples_per_category: int = 50
+    error_examples_per_category: int = 3
+    # "redacted" keeps verbatim tweet text out of the report, because those examples
+    # are hate speech and the report may be published. The verbatim rows stay in the
+    # git-ignored results/error_analysis.csv. Use "full" for a local-only report.
+    error_examples_in_report: str = "redacted"
 
 
 @dataclass
@@ -112,7 +184,9 @@ class Config:
     tfidf: TfidfConfig = field(default_factory=TfidfConfig)
     laya: LayaConfig = field(default_factory=LayaConfig)
     hatexplain: HateXplainConfig = field(default_factory=HateXplainConfig)
-    inference_warmup: int = 5
+    inference: InferenceConfig = field(default_factory=InferenceConfig)
+    stats: StatsConfig = field(default_factory=StatsConfig)
+    calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
     raw: Dict[str, Any] = field(default_factory=dict)
     path: Optional[str] = None
@@ -124,6 +198,10 @@ class Config:
     @property
     def report_dir(self) -> Path:
         return PROJECT_ROOT / self.output.report_dir
+
+    @property
+    def inference_warmup(self) -> int:
+        return self.inference.warmup
 
 
 def _from(cls: Type[T], data: Any) -> T:
@@ -154,18 +232,28 @@ def load_config(path: Optional[str] = None) -> Config:
     split.normalize = _from(NormalizeConfig, split_raw.get("normalize"))
 
     models = raw.get("models") or {}
+    tfidf_raw = dict(models.get("tfidf") or {})
+    tfidf_declared = tfidf_raw.pop("variants", None)
+    laya_raw = dict(models.get("laya") or {})
+    laya_declared = laya_raw.pop("variants", None)
+
     cfg = Config(
         dataset=dataset,
         split=split,
         majority=_from(MajorityConfig, models.get("majority")),
-        tfidf=_from(TfidfConfig, models.get("tfidf")),
-        laya=_from(LayaConfig, models.get("laya")),
+        tfidf=_from(TfidfConfig, tfidf_raw),
+        laya=_from(LayaConfig, laya_raw),
         hatexplain=_from(HateXplainConfig, models.get("hatexplain")),
-        inference_warmup=int((raw.get("inference") or {}).get("warmup", 5)),
+        inference=_from(InferenceConfig, raw.get("inference")),
+        stats=_from(StatsConfig, raw.get("stats")),
+        calibration=_from(CalibrationConfig, raw.get("calibration")),
         output=_from(OutputConfig, raw.get("output")),
         raw=raw,
         path=str(config_path),
     )
+    if tfidf_declared:
+        cfg.tfidf.variants = [_from(TfidfVariant, item) for item in tfidf_declared]
+    cfg.laya.variants = [_from(LayaVariant, item) for item in laya_declared] if laya_declared else [LayaVariant()]
     return cfg
 
 

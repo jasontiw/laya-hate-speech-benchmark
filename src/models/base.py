@@ -1,8 +1,14 @@
 """Common model interface.
 
-Every model is loaded once, warmed up, then asked to classify one tweet at a time.
-Keeping prediction per-item is deliberate: it is what makes the reported p50/p95
-latency an honest per-example latency rather than a per-batch one.
+Two things every model declares:
+
+* its ``task`` - ``three_class`` (hate / offensive / neither) or ``hate_binary``
+  (hate vs rest). A binary model has no three-class confusion matrix, so it is
+  excluded from the three-class tables instead of being scored on labels it never
+  emits.
+* whether it can batch (:meth:`predict_batch`). Predictions always come from one
+  authoritative path; batching is used for throughput and cross-checked against the
+  single-item path.
 """
 from __future__ import annotations
 
@@ -12,7 +18,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-# (predicted canonical label, optional {canonical label -> probability})
+from ..config import TASK_THREE_CLASS
+
+# (predicted label, optional {label -> probability})
 Prediction = Tuple[str, Optional[Dict[str, float]]]
 
 
@@ -23,15 +31,15 @@ class ModelResult:
     key: str
     name: str
     labels: List[str]
+    task: str = TASK_THREE_CLASS
     probabilities: Optional[List[Optional[Dict[str, float]]]] = None
     latencies_ms: List[float] = field(default_factory=list)
     load_time_s: float = 0.0
     device: Optional[str] = None
     revision: Optional[str] = None
+    batch: Optional[Dict[str, Any]] = None
+    token_stats: Optional[Dict[str, Any]] = None
     details: Dict[str, Any] = field(default_factory=dict)
-
-    def supports_probabilities(self) -> bool:
-        return self.probabilities is not None
 
 
 class Classifier(ABC):
@@ -39,6 +47,7 @@ class Classifier(ABC):
 
     key: str = "classifier"
     display_name: str = "classifier"
+    task: str = TASK_THREE_CLASS
 
     def load(self, train_df: pd.DataFrame) -> None:
         """Fit on the training split or load pretrained weights. Called once."""
@@ -46,7 +55,15 @@ class Classifier(ABC):
 
     @abstractmethod
     def predict_one(self, text: str) -> Prediction:
-        """Classify a single tweet, returning a canonical label."""
+        """Classify a single tweet."""
+
+    def predict_batch(self, texts: List[str]) -> Optional[List[Prediction]]:
+        """Classify many tweets at once, in input order.
+
+        Returns None when the model has no batched path, so the caller falls back to
+        looping :meth:`predict_one` without special-casing the model.
+        """
+        return None
 
     def supports_probabilities(self) -> bool:
         return False
