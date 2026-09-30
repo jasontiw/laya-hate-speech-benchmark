@@ -1,6 +1,6 @@
 # Local Hate Speech Detection Benchmark — Technical Report
 
-_Generated at 2026-09-29T21:36:05 by `run_benchmark.py`._
+_Generated at 2026-09-29T22:09:45 by `run_benchmark.py`._
 
 ## 1. Executive Summary
 
@@ -90,13 +90,13 @@ How does Laya perform on a known hate-speech dataset compared with classical and
 | Key | Model | Task | Device | Load (s) |
 | --- | --- | --- | --- | ---: |
 | majority | Majority baseline | three_class | n/a | 0.00 |
-| tfidf | TF-IDF + Logistic Regression | three_class | n/a | 1.04 |
-| tfidf_balanced | TF-IDF + Logistic Regression (class_weight=balanced) | three_class | n/a | 1.01 |
-| laya | Laya (zero-shot, L1 3-class choice (PRD wording)) | three_class | cuda | 4.06 |
-| laya_semantic | Laya (zero-shot, L4 3-class choice (explicit definitions)) | three_class | cuda | 1.20 |
-| laya_binary | Laya (zero-shot, L2 2-class choice (hate / not hate)) | hate_binary | cuda | 0.96 |
-| laya_noul | Laya (zero-shot, L3 2-class noul (is_hate)) | hate_binary | cuda | 0.89 |
-| hatexplain | HateXplain BERT | three_class | cuda | 1.32 |
+| tfidf | TF-IDF + Logistic Regression | three_class | n/a | 1.13 |
+| tfidf_balanced | TF-IDF + Logistic Regression (class_weight=balanced) | three_class | n/a | 1.12 |
+| laya | Laya (zero-shot, L1 3-class choice (PRD wording)) | three_class | cuda | 3.90 |
+| laya_semantic | Laya (zero-shot, L4 3-class choice (explicit definitions)) | three_class | cuda | 0.93 |
+| laya_binary | Laya (zero-shot, L2 2-class choice (hate / not hate)) | hate_binary | cuda | 0.98 |
+| laya_noul | Laya (zero-shot, L3 2-class noul (is_hate)) | hate_binary | cuda | 1.19 |
+| hatexplain | HateXplain BERT | three_class | cuda | 1.28 |
 
 - Laya Hub commit: `55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851`
 - HateXplain Hub commit: `e487c81b768c7532bf474bd5e486dedea4cf3848`
@@ -114,11 +114,11 @@ Each three-class model returns exactly one of hate speech / offensive language /
 | Model | Accuracy | Macro F1 | Macro F1 95% CI | Hate Precision | Hate Recall | Hate F1 | PR-AUC | p50 latency |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | majority | 77.54% | 0.2912 | [0.2887, 0.2936] | 0.0000 | 0.0000 | 0.0000 | n/a | 0.0 ms |
-| tfidf | 89.09% | 0.6579 | [0.6356, 0.6799] | 0.7222 | 0.1373 | 0.2308 | 0.429 | 0.5 ms |
-| tfidf_balanced | 87.67% | 0.7449 | [0.7270, 0.7618] | 0.4015 | 0.5810 | 0.4748 | 0.423 | 0.5 ms |
-| laya | 68.07% | 0.5653 | [0.5481, 0.5806] | 0.1880 | 0.6725 | 0.2938 | 0.291 | 36.0 ms |
-| laya_semantic | 39.49% | 0.3651 | [0.3501, 0.3797] | 0.1616 | 0.6549 | 0.2592 | 0.266 | 36.5 ms |
-| hatexplain | 61.16% | 0.4859 | [0.4646, 0.5056] | 0.3699 | 0.2254 | 0.2801 | 0.260 | 8.2 ms |
+| tfidf | 89.09% | 0.6579 | [0.6356, 0.6799] | 0.7222 | 0.1373 | 0.2308 | 0.429 | 0.4 ms |
+| tfidf_balanced | 87.67% | 0.7449 | [0.7270, 0.7618] | 0.4015 | 0.5810 | 0.4748 | 0.423 | 0.4 ms |
+| laya | 68.07% | 0.5653 | [0.5481, 0.5806] | 0.1880 | 0.6725 | 0.2938 | 0.291 | 36.1 ms |
+| laya_semantic | 39.49% | 0.3651 | [0.3501, 0.3797] | 0.1616 | 0.6549 | 0.2592 | 0.266 | 34.4 ms |
+| hatexplain | 61.16% | 0.4859 | [0.4646, 0.5056] | 0.3699 | 0.2254 | 0.2801 | 0.260 | 9.2 ms |
 
 ### Binary (hate-vs-rest) variants
 
@@ -269,6 +269,27 @@ The two ECE columns measure **different things, and they disagree**:
 
 _Measured result. Fitting Laya's temperature map fixes the first and barely moves the second. A per-question-type temperature calibrates the confidence of the answer Laya picked; it does not calibrate the probability of a particular class, which is what a detector needs. Temperature scaling is monotone, so 'labels changed' is 0 by construction and the classification metrics are untouched. The fitted maps are saved as `results/calibration_<model>.json` and load with `laya.load(repo, calibration=path)`._
 
+**Calibrating the hate score itself.** Laya's temperature map fixes the confidence of its chosen answer, not `P(hate speech)`. These monotone maps target the hate score directly:
+
+| Model | Map | Hate-score ECE (test) | Brier (test) | PR-AUC (test) | Distinct scores | Hate decisions at 0.5 changed |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| tfidf | platt | 0.0204 → 0.0155 | 0.0428 → 0.0416 | 0.429 → 0.429 | 4904 → 4904 | 51 |
+| tfidf | isotonic | 0.0204 → 0.0067 | 0.0428 → 0.0414 | 0.429 → 0.401 | 4904 → 41 | 44 |
+| tfidf_balanced | platt | 0.1043 → 0.0123 | 0.0579 → 0.0420 | 0.423 → 0.423 | 4904 → 4904 | 213 |
+| tfidf_balanced | isotonic | 0.1043 → 0.0080 | 0.0579 → 0.0420 | 0.423 → 0.383 | 4904 → 43 | 197 |
+| laya | platt | 0.2307 → 0.0068 | 0.1147 → 0.0470 | 0.291 → 0.291 | 3206 → 3206 | 728 |
+| laya | isotonic | 0.2307 → 0.0071 | 0.1147 → 0.0471 | 0.291 → 0.267 | 3206 → 44 | 747 |
+| laya_semantic | platt | 0.2118 → 0.0064 | 0.1072 → 0.0479 | 0.266 → 0.266 | 3298 → 3298 | 672 |
+| laya_semantic | isotonic | 0.2118 → 0.0028 | 0.1072 → 0.0480 | 0.266 → 0.245 | 3298 → 35 | 685 |
+| laya_binary | platt | 0.2824 → 0.0032 | 0.1603 → 0.0477 | 0.270 → 0.270 | 2693 → 2693 | 1263 |
+| laya_binary | isotonic | 0.2824 → 0.0037 | 0.1603 → 0.0476 | 0.270 → 0.254 | 2693 → 37 | 1271 |
+| laya_noul | platt | 0.4144 → 0.0139 | 0.2544 → 0.0486 | 0.252 → 0.252 | 2064 → 2064 | 2495 |
+| laya_noul | isotonic | 0.4144 → 0.0034 | 0.2544 → 0.0482 | 0.252 → 0.232 | 2064 → 25 | 2496 |
+| hatexplain | platt | 0.0280 → 0.0128 | 0.0515 → 0.0487 | 0.260 → 0.260 | 4925 → 4925 | 90 |
+| hatexplain | isotonic | 0.0280 → 0.0097 | 0.0515 → 0.0479 | 0.260 → 0.231 | 4925 → 35 | 148 |
+
+_Measured result. What changes is whether `P(hate speech)` means what it says — and the two maps pay different prices for it. **Platt** is strictly monotone: PR-AUC and the distinct-score count are unchanged to the last decimal, so every ranking decision survives. **Isotonic** is only non-decreasing: it merges thousands of distinct scores into a few dozen blocks, ties appear, and `average_precision` falls a few points because it cannot rank inside a tie. So isotonic gives the best ECE while destroying fine ranking; Platt gives a marginally worse ECE and keeps it. The 'decisions changed' column is not a detection change: it is how many rows would flip if you decided at a fixed 0.5, i.e. how far the raw 0.5 was from the calibrated one._
+
 **Abstention / coverage.** Dropping the least confident answers:
 
 | Model | Confidence ≥ | Coverage | Accuracy on kept | Hate recall on kept |
@@ -396,13 +417,13 @@ Plots: `results/confusion_matrix_<model>.png` and `results/pr_curve_hate_vs_rest
 | Model | Load (s) | Single-item p50 (ms) | Single-item p95 (ms) | Single-item (items/s) | Batch size | Batched total (s) | Batched (items/s) | Batch/single label agreement |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | majority | 0.00 | 0.00 | 0.00 | n/a | n/a | n/a | n/a | n/a |
-| tfidf | 1.04 | 0.46 | 0.51 | 2142.94 | None | 0.07 | 68016.05 | 100.00% |
-| tfidf_balanced | 1.01 | 0.46 | 0.75 | 1982.23 | None | 0.07 | 67767.23 | 100.00% |
-| laya | 4.06 | 36.00 | 38.05 | 27.66 | 64 | 21.24 | 232.30 | 99.40% |
-| laya_semantic | 1.20 | 36.47 | 40.19 | 27.12 | 64 | 24.71 | 199.64 | 99.00% |
-| laya_binary | 0.96 | 33.84 | 36.18 | 29.38 | 64 | 18.33 | 269.14 | 99.80% |
-| laya_noul | 0.89 | 32.94 | 42.74 | 29.37 | 64 | 12.77 | 386.34 | 99.80% |
-| hatexplain | 1.32 | 8.19 | 9.18 | 120.02 | 64 | 6.82 | 723.54 | 100.00% |
+| tfidf | 1.13 | 0.45 | 0.52 | 2178.55 | None | 0.08 | 63997.11 | 100.00% |
+| tfidf_balanced | 1.12 | 0.43 | 0.47 | 2282.15 | None | 0.08 | 65455.74 | 100.00% |
+| laya | 3.90 | 36.12 | 38.38 | 27.53 | 64 | 21.55 | 228.95 | 99.40% |
+| laya_semantic | 0.93 | 34.35 | 39.46 | 28.60 | 64 | 23.04 | 214.08 | 99.00% |
+| laya_binary | 0.98 | 36.19 | 41.20 | 27.03 | 64 | 17.25 | 285.98 | 99.80% |
+| laya_noul | 1.19 | 35.09 | 42.11 | 27.94 | 64 | 12.84 | 384.31 | 99.80% |
+| hatexplain | 1.28 | 9.20 | 12.93 | 103.43 | 64 | 7.01 | 703.92 | 100.00% |
 
 _Load time is model loading/fitting. Single-item latency and throughput are measured on a latency-sample-row sample with a warm-up; the batched column is the full-test-set pass. They are reported separately because they measure different things._
 
