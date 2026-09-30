@@ -685,6 +685,13 @@ This should remain secondary to the core benchmark.
 
 # 24. Laya Fine-Tuning — Phase 2
 
+> **Implementation status (added by this repository).** Phase 2A is implemented as an
+> opt-in step: `scripts/build_laya_finetune_data.py` → `scripts/finetune_laya.py` →
+> `run_benchmark.py --include-finetuned`. The train split is used for training, the
+> validation split for temperature fitting, and the test set is scored once afterwards.
+> Protocol, measured cost and limits are in `docs/finetuning.md`. The paragraphs below
+> are the original requirement, unchanged.
+
 Fine-tuning Laya should **not** be part of the mandatory MVP.
 
 It can be added after the base comparison.

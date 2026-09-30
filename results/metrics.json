@@ -65,10 +65,10 @@
       "latency": {
         "count": 4933,
         "total_s": 0.001,
-        "average_ms": 0.0001234948610345658,
+        "average_ms": 0.00012012981544797207,
         "p50_ms": 0.000100000761449337,
         "p95_ms": 0.000200001522898674,
-        "min_ms": 9.999348549172282e-05,
+        "min_ms": 9.998620953410864e-05,
         "max_ms": 0.000700005330145359,
         "throughput_per_s": null
       },
@@ -181,15 +181,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 0.23,
-        "average_ms": 0.4590205999702448,
-        "p50_ms": 0.4472999971767422,
-        "p95_ms": 0.5237400004261872,
-        "min_ms": 0.40889999945648015,
-        "max_ms": 1.0939999992842786,
-        "throughput_per_s": 2178.5514638445925
+        "total_s": 0.255,
+        "average_ms": 0.5096313999965787,
+        "p50_ms": 0.4669500049203634,
+        "p95_ms": 0.681545007682871,
+        "min_ms": 0.4132000030949712,
+        "max_ms": 7.046500002616085,
+        "throughput_per_s": 1962.2024859667463
       },
-      "load_time_s": 1.127,
+      "load_time_s": 1.24,
       "display_name": "TF-IDF + Logistic Regression",
       "device": null,
       "revision": null,
@@ -216,8 +216,8 @@
         "used": true,
         "n": 4933,
         "batch_size": null,
-        "total_s": 0.07708160000038333,
-        "throughput_per_s": 63997.11474561332,
+        "total_s": 0.07378930000413675,
+        "throughput_per_s": 66852.51113269062,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -482,15 +482,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 0.219,
-        "average_ms": 0.4381838002445875,
-        "p50_ms": 0.4320499974710401,
-        "p95_ms": 0.46823499978927424,
-        "min_ms": 0.4053999946336262,
-        "max_ms": 1.0584999981801957,
-        "throughput_per_s": 2282.1473533293915
+        "total_s": 0.224,
+        "average_ms": 0.4483019998879172,
+        "p50_ms": 0.44284999603405595,
+        "p95_ms": 0.4832700120459776,
+        "min_ms": 0.4138000076636672,
+        "max_ms": 0.7542000093962997,
+        "throughput_per_s": 2230.639167904708
       },
-      "load_time_s": 1.123,
+      "load_time_s": 0.968,
       "display_name": "TF-IDF + Logistic Regression (class_weight=balanced)",
       "device": null,
       "revision": null,
@@ -517,8 +517,8 @@
         "used": true,
         "n": 4933,
         "batch_size": null,
-        "total_s": 0.0753638999958639,
-        "throughput_per_s": 65455.742076388444,
+        "total_s": 0.07447510000201873,
+        "throughput_per_s": 66236.90333905272,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -783,15 +783,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 18.162,
-        "average_ms": 36.32328479993157,
-        "p50_ms": 36.11860000091838,
-        "p95_ms": 38.38171000388683,
-        "min_ms": 33.95029999956023,
-        "max_ms": 44.996699994953815,
-        "throughput_per_s": 27.530549770154156
+        "total_s": 17.368,
+        "average_ms": 34.735254400380654,
+        "p50_ms": 34.54490000149235,
+        "p95_ms": 36.36521499574882,
+        "min_ms": 32.95960000832565,
+        "max_ms": 41.226200002711266,
+        "throughput_per_s": 28.78919464568658
       },
-      "load_time_s": 3.896,
+      "load_time_s": 3.815,
       "display_name": "Laya (zero-shot, L1 3-class choice (PRD wording))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -799,6 +799,7 @@
         "variant": "laya",
         "variant_label": "L1 3-class choice (PRD wording)",
         "variant_note": "",
+        "regime": "zero-shot",
         "task": "three_class",
         "question_type": "choice",
         "repo": "convaiinnovations/laya",
@@ -820,7 +821,9 @@
               "neither": "language that does not belong to either category."
             }
           }
-        }
+        },
+        "fine_tuned": null,
+        "finetune": null
       },
       "training_regime": {
         "regime": "Zero-shot",
@@ -831,8 +834,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 21.54635330000019,
-        "throughput_per_s": 228.9482554804277,
+        "total_s": 20.214168799997424,
+        "throughput_per_s": 244.0367471355354,
         "single_sample_n": 500,
         "single_sample_label_match": 0.994
       },
@@ -1115,15 +1118,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 17.481,
-        "average_ms": 34.96278079976037,
-        "p50_ms": 34.3528499979584,
-        "p95_ms": 39.46296000140135,
-        "min_ms": 32.247800001641735,
-        "max_ms": 50.5020999989938,
-        "throughput_per_s": 28.60184393590495
+        "total_s": 17.632,
+        "average_ms": 35.26373559932108,
+        "p50_ms": 35.093400001642294,
+        "p95_ms": 36.46615000980091,
+        "min_ms": 33.397699997294694,
+        "max_ms": 43.95079999812879,
+        "throughput_per_s": 28.357744379731926
       },
-      "load_time_s": 0.934,
+      "load_time_s": 1.099,
       "display_name": "Laya (zero-shot, L4 3-class choice (explicit definitions))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -1131,6 +1134,7 @@
         "variant": "laya_semantic",
         "variant_label": "L4 3-class choice (explicit definitions)",
         "variant_note": "makes the hate-vs-offensive boundary explicit and reproducible",
+        "regime": "zero-shot",
         "task": "three_class",
         "question_type": "choice",
         "repo": "convaiinnovations/laya",
@@ -1152,7 +1156,9 @@
               "neither": "the text does not meet either definition"
             }
           }
-        }
+        },
+        "fine_tuned": null,
+        "finetune": null
       },
       "training_regime": {
         "regime": "Zero-shot",
@@ -1163,8 +1169,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 23.04255920000287,
-        "throughput_per_s": 214.08212330856833,
+        "total_s": 23.755840600002557,
+        "throughput_per_s": 207.65419683778603,
         "single_sample_n": 500,
         "single_sample_label_match": 0.99
       },
@@ -1416,15 +1422,15 @@
       "task": "hate_binary",
       "latency": {
         "count": 500,
-        "total_s": 18.496,
-        "average_ms": 36.992547400004696,
-        "p50_ms": 36.18714999902295,
-        "p95_ms": 41.20057999462005,
-        "min_ms": 33.66450000612531,
-        "max_ms": 55.21420000150101,
-        "throughput_per_s": 27.03247195136048
+        "total_s": 17.114,
+        "average_ms": 34.227376000140794,
+        "p50_ms": 34.10420000000158,
+        "p95_ms": 35.37722999972175,
+        "min_ms": 32.26330000325106,
+        "max_ms": 40.98090001207311,
+        "throughput_per_s": 29.21637930982166
       },
-      "load_time_s": 0.976,
+      "load_time_s": 0.994,
       "display_name": "Laya (zero-shot, L2 2-class choice (hate / not hate))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -1432,6 +1438,7 @@
         "variant": "laya_binary",
         "variant_label": "L2 2-class choice (hate / not hate)",
         "variant_note": "",
+        "regime": "zero-shot",
         "task": "hate_binary",
         "question_type": "choice",
         "repo": "convaiinnovations/laya",
@@ -1452,7 +1459,9 @@
               "not hate speech": "the text does not express hate speech toward a protected group"
             }
           }
-        }
+        },
+        "fine_tuned": null,
+        "finetune": null
       },
       "training_regime": {
         "regime": "Zero-shot",
@@ -1463,8 +1472,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 17.249166900001,
-        "throughput_per_s": 285.98482631643583,
+        "total_s": 17.973777499995776,
+        "throughput_per_s": 274.45538368332194,
         "single_sample_n": 500,
         "single_sample_label_match": 0.998
       },
@@ -1715,15 +1724,15 @@
       "task": "hate_binary",
       "latency": {
         "count": 500,
-        "total_s": 17.896,
-        "average_ms": 35.79245379987697,
-        "p50_ms": 35.08544999931473,
-        "p95_ms": 42.107750000650405,
-        "min_ms": 30.548099995939992,
-        "max_ms": 54.932800005190074,
-        "throughput_per_s": 27.938850060160934
+        "total_s": 18.996,
+        "average_ms": 37.99284799976158,
+        "p50_ms": 37.237099997582845,
+        "p95_ms": 44.305509998230264,
+        "min_ms": 32.94830000959337,
+        "max_ms": 59.895400001551025,
+        "throughput_per_s": 26.320743314801653
       },
-      "load_time_s": 1.194,
+      "load_time_s": 1.022,
       "display_name": "Laya (zero-shot, L3 2-class noul (is_hate))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -1731,6 +1740,7 @@
         "variant": "laya_noul",
         "variant_label": "L3 2-class noul (is_hate)",
         "variant_note": "",
+        "regime": "zero-shot",
         "task": "hate_binary",
         "question_type": "noul",
         "repo": "convaiinnovations/laya",
@@ -1747,7 +1757,9 @@
             "type": "noul",
             "instructions": "Is this text hate speech?"
           }
-        }
+        },
+        "fine_tuned": null,
+        "finetune": null
       },
       "training_regime": {
         "regime": "Zero-shot",
@@ -1758,8 +1770,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 12.835863000000245,
-        "throughput_per_s": 384.3138556402406,
+        "total_s": 13.060115600004792,
+        "throughput_per_s": 377.71488025712347,
         "single_sample_n": 500,
         "single_sample_label_match": 0.998
       },
@@ -1960,6 +1972,373 @@
         }
       }
     },
+    "laya_finetuned": {
+      "n": 4933,
+      "labels": [
+        "hate speech",
+        "offensive language",
+        "neither"
+      ],
+      "accuracy": 0.9122237989053315,
+      "macro_precision": 0.7843842008729008,
+      "macro_recall": 0.7256187134440205,
+      "macro_f1": 0.7485003025795615,
+      "weighted_f1": 0.9066867491965422,
+      "per_class": {
+        "hate speech": {
+          "precision": 0.518918918918919,
+          "recall": 0.3380281690140845,
+          "f1": 0.4093816631130064,
+          "support": 284
+        },
+        "offensive language": {
+          "precision": 0.9328604003040284,
+          "recall": 0.9626143790849673,
+          "f1": 0.9475038600102934,
+          "support": 3825
+        },
+        "neither": {
+          "precision": 0.9013732833957553,
+          "recall": 0.8762135922330098,
+          "f1": 0.8886153846153846,
+          "support": 824
+        }
+      },
+      "confusion_matrix": [
+        [
+          96,
+          176,
+          12
+        ],
+        [
+          76,
+          3682,
+          67
+        ],
+        [
+          13,
+          89,
+          722
+        ]
+      ],
+      "hate": {
+        "precision": 0.518918918918919,
+        "recall": 0.3380281690140845,
+        "f1": 0.4093816631130064,
+        "support": 284,
+        "tp": 96,
+        "fp": 89,
+        "fn": 188,
+        "tn": 4560,
+        "false_positive_rate": 0.01914390191439019,
+        "false_negative_rate": 0.6619718309859155,
+        "average_precision": 0.3193726271179571
+      },
+      "task": "three_class",
+      "latency": {
+        "count": 500,
+        "total_s": 17.213,
+        "average_ms": 34.42508819999057,
+        "p50_ms": 34.305250002944376,
+        "p95_ms": 35.603914989042096,
+        "min_ms": 32.619099991279654,
+        "max_ms": 41.62610000639688,
+        "throughput_per_s": 29.048582074519533
+      },
+      "load_time_s": 0.98,
+      "display_name": "Laya (fine-tuned, L1 3-class choice (PRD wording))",
+      "device": "cuda",
+      "revision": null,
+      "details": {
+        "variant": "laya_finetuned",
+        "variant_label": "L1 3-class choice (PRD wording)",
+        "variant_note": "Supervised fine-tuned on the Davidson train split (RLCD).",
+        "regime": "fine-tuned",
+        "task": "three_class",
+        "question_type": "choice",
+        "repo": "D:\\Projects\\laya-hate-speech-benchmark\\artifacts\\laya-finetuned-l1",
+        "subfolder": null,
+        "revision_requested": null,
+        "revision_resolved": null,
+        "laya_version": "0.3.22",
+        "device": "cuda",
+        "max_len": 512,
+        "batch_size": 64,
+        "sort_by_length": true,
+        "questions": {
+          "label": {
+            "type": "choice",
+            "instructions": "Classify the language of this message.",
+            "criteria": {
+              "hate speech": "language attacking or expressing hostility toward a protected group.",
+              "offensive language": "rude, insulting, profane, or abusive language that does not constitute hate speech.",
+              "neither": "language that does not belong to either category."
+            }
+          }
+        },
+        "fine_tuned": true,
+        "finetune": {
+          "base_checkpoint": "C:\\Users\\jason\\.cache\\huggingface\\hub\\models--convaiinnovations--laya\\snapshots\\55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "data": "D:\\Projects\\laya-hate-speech-benchmark\\data\\processed\\laya_finetune_train.jsonl",
+          "train_items": 16130,
+          "calibration_items_held_out": 0,
+          "epochs": 4,
+          "optimizer_steps": 1012,
+          "micro_batch": 8,
+          "grad_accum": 8,
+          "group_size": 4,
+          "lr_encoder": 2.5e-05,
+          "lr_head": 0.0001,
+          "sigma_start": 0.4,
+          "sigma_end": 0.1,
+          "amp": "fp16",
+          "gradient_checkpointing": true,
+          "temperature_fitted_here": false,
+          "eval_on": "D:\\Projects\\laya-hate-speech-benchmark\\data\\processed\\laya_finetune_validation.jsonl",
+          "eval_history": [
+            {
+              "rows": 3720,
+              "accuracy": 0.6782258064516129,
+              "hate_precision": 0.17543859649122806,
+              "hate_recall": 0.6572769953051644,
+              "hate_tp": 140,
+              "hate_fp": 658,
+              "hate_fn": 73,
+              "epoch": 0,
+              "step": 0
+            },
+            {
+              "rows": 3720,
+              "accuracy": 0.9088709677419354,
+              "hate_precision": 0.38636363636363635,
+              "hate_recall": 0.07981220657276995,
+              "hate_tp": 17,
+              "hate_fp": 27,
+              "hate_fn": 196,
+              "epoch": 1,
+              "step": 253
+            },
+            {
+              "rows": 3720,
+              "accuracy": 0.9112903225806451,
+              "hate_precision": 0.4918032786885246,
+              "hate_recall": 0.14084507042253522,
+              "hate_tp": 30,
+              "hate_fp": 31,
+              "hate_fn": 183,
+              "epoch": 2,
+              "step": 506
+            },
+            {
+              "rows": 3720,
+              "accuracy": 0.914247311827957,
+              "hate_precision": 0.5288461538461539,
+              "hate_recall": 0.25821596244131456,
+              "hate_tp": 55,
+              "hate_fp": 49,
+              "hate_fn": 158,
+              "epoch": 3,
+              "step": 759
+            },
+            {
+              "rows": 3720,
+              "accuracy": 0.910483870967742,
+              "hate_precision": 0.5144927536231884,
+              "hate_recall": 0.3333333333333333,
+              "hate_tp": 71,
+              "hate_fp": 67,
+              "hate_fn": 142,
+              "epoch": 4,
+              "step": 1012
+            }
+          ],
+          "seed": 0,
+          "device": "cuda:0",
+          "seconds": 1685.4,
+          "git_commit": "4dc0cd03b1ee7b84b9c6be0c41cdc8b917bc9cfc",
+          "finished_at": "2026-09-30T09:09:46"
+        }
+      },
+      "training_regime": {
+        "regime": "Supervised fine-tuned (RLCD, fit here)",
+        "trained_on_davidson": true,
+        "note": "Same L1 question, fine-tuned on the Davidson train split with RLCD (scripts/finetune_laya.py); test rows never seen."
+      },
+      "batch": {
+        "used": true,
+        "n": 4933,
+        "batch_size": 64,
+        "total_s": 19.608203200012213,
+        "throughput_per_s": 251.57838021573173,
+        "single_sample_n": 500,
+        "single_sample_label_match": 1.0
+      },
+      "token_stats": {
+        "rows": 4933,
+        "truncated_rows": 0,
+        "mean_state_tokens": 26.853436042975876,
+        "max_state_tokens": 131,
+        "max_len": 512
+      },
+      "operating_point": {
+        "threshold": 0.274,
+        "accuracy": 0.911818366105818,
+        "macro_f1": 0.7513090198468665,
+        "hate_precision": 0.505,
+        "hate_recall": 0.35563380281690143,
+        "hate_f1": 0.4173553719008265,
+        "hate_tp": 101,
+        "hate_fp": 99,
+        "hate_fn": 183,
+        "threshold_source": "validation",
+        "threshold_source_rows": 3720
+      },
+      "operating_point_on_test": {
+        "threshold": 0.0006,
+        "accuracy": 0.9075613217109264,
+        "macro_f1": 0.7526272585951581,
+        "hate_precision": 0.4180602006688963,
+        "hate_recall": 0.44014084507042256,
+        "hate_f1": 0.42881646655231564,
+        "hate_tp": 125,
+        "hate_fp": 174,
+        "hate_fn": 159
+      },
+      "recalibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "temperature": [
+          5.0,
+          1.0,
+          1.0
+        ],
+        "temperature_by_options": {
+          "choice:3-5": 5.0
+        },
+        "fit_report": {
+          "ece_before": 0.0895119278055696,
+          "ece_after": 0.043199406865203675,
+          "n": 3720.0,
+          "n_eval": 744.0,
+          "buckets_excluded_from_eval": []
+        },
+        "labels_changed": 0,
+        "test_before": {
+          "brier": 0.05348888988647881,
+          "ece": 0.051747638353942825
+        },
+        "test_after": {
+          "brier": 0.0487684495438881,
+          "ece": 0.02548578958037705
+        }
+      },
+      "score_calibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "test_before": {
+          "brier": 0.05348888988647881,
+          "ece": 0.051747638353942825,
+          "average_precision": 0.3193726271179571,
+          "unique_scores": 185
+        },
+        "platt": {
+          "params": {
+            "method": "platt",
+            "a": 0.15844285933931754,
+            "b": -1.1150258039867416
+          },
+          "test_after": {
+            "brier": 0.044489513285785216,
+            "ece": 0.007498518546132939,
+            "average_precision": 0.3193726271179571,
+            "unique_scores": 185
+          },
+          "hate_decisions_changed_at_0_5": 79
+        },
+        "isotonic": {
+          "params": {
+            "method": "isotonic",
+            "x": [
+              0.0,
+              0.0001,
+              0.0002,
+              0.1328,
+              0.1493,
+              0.2525,
+              0.274,
+              0.4381,
+              0.4469,
+              0.9788,
+              0.9867,
+              0.9936,
+              0.9947,
+              0.9999
+            ],
+            "y": [
+              0.03379186602870814,
+              0.10084033613445378,
+              0.11764705882352941,
+              0.11764705882352941,
+              0.2,
+              0.2,
+              0.2857142857142857,
+              0.2857142857142857,
+              0.45,
+              0.45,
+              0.5,
+              0.5,
+              0.5350877192982456,
+              0.5350877192982456
+            ]
+          },
+          "test_after": {
+            "brier": 0.04477706931923218,
+            "ece": 0.005648024185560799,
+            "average_precision": 0.2817034712974254,
+            "unique_scores": 17
+          },
+          "hate_decisions_changed_at_0_5": 40
+        }
+      },
+      "confidence": {
+        "high_confidence": 0.5,
+        "correct_high": 4495,
+        "correct_low": 5,
+        "incorrect_high": 426,
+        "incorrect_low": 7,
+        "mean_confidence_correct": 0.9971060444444445,
+        "mean_confidence_incorrect": 0.9545009237875288
+      },
+      "bootstrap": {
+        "samples": 1000,
+        "seed": 42,
+        "confidence": 0.95,
+        "accuracy": {
+          "mean": 0.9122473140077032,
+          "low": 0.9041151429150618,
+          "high": 0.9193188728968174,
+          "n": 1000
+        },
+        "macro_f1": {
+          "mean": 0.7483729830907216,
+          "low": 0.7275580965419711,
+          "high": 0.7673479438328535,
+          "n": 1000
+        },
+        "hate_f1": {
+          "mean": 0.40909978852551415,
+          "low": 0.35179729765047174,
+          "high": 0.4608883842733972,
+          "n": 1000
+        },
+        "average_precision": {
+          "mean": 0.3205380699398119,
+          "low": 0.26046877789025685,
+          "high": 0.37784495218189285,
+          "n": 1000
+        }
+      }
+    },
     "hatexplain": {
       "n": 4933,
       "labels": [
@@ -2025,15 +2404,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 4.834,
-        "average_ms": 9.667924799956381,
-        "p50_ms": 9.198100004141452,
-        "p95_ms": 12.927439999475602,
-        "min_ms": 8.585800002038013,
-        "max_ms": 17.55270000285236,
-        "throughput_per_s": 103.43481364320414
+        "total_s": 4.256,
+        "average_ms": 8.512969800067367,
+        "p50_ms": 8.447199994407129,
+        "p95_ms": 9.109594987239687,
+        "min_ms": 7.978900001035072,
+        "max_ms": 9.98809999146033,
+        "throughput_per_s": 117.46781951371266
       },
-      "load_time_s": 1.283,
+      "load_time_s": 1.501,
       "display_name": "HateXplain BERT",
       "device": "cuda",
       "revision": null,
@@ -2064,8 +2443,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 7.007911600005173,
-        "throughput_per_s": 703.9186966908028,
+        "total_s": 6.929859900003066,
+        "throughput_per_s": 711.8470028517918,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -2263,7 +2642,7 @@
       "load_time_s": 0.001,
       "p50_latency_ms": 0.000100000761449337,
       "p95_latency_ms": 0.000200001522898674,
-      "average_latency_ms": 0.0001234948610345658,
+      "average_latency_ms": 0.00012012981544797207,
       "throughput_per_s": null
     },
     {
@@ -2286,11 +2665,11 @@
       "operating_threshold": 0.12865053932711581,
       "operating_hate_f1": 0.47577092511013214,
       "operating_accuracy": 0.8779647273464424,
-      "load_time_s": 1.127,
-      "p50_latency_ms": 0.4472999971767422,
-      "p95_latency_ms": 0.5237400004261872,
-      "average_latency_ms": 0.4590205999702448,
-      "throughput_per_s": 2178.5514638445925
+      "load_time_s": 1.24,
+      "p50_latency_ms": 0.4669500049203634,
+      "p95_latency_ms": 0.681545007682871,
+      "average_latency_ms": 0.5096313999965787,
+      "throughput_per_s": 1962.2024859667463
     },
     {
       "model": "tfidf_balanced",
@@ -2312,11 +2691,11 @@
       "operating_threshold": 0.4941815719414073,
       "operating_hate_f1": 0.46732026143790856,
       "operating_accuracy": 0.88060004054328,
-      "load_time_s": 1.123,
-      "p50_latency_ms": 0.4320499974710401,
-      "p95_latency_ms": 0.46823499978927424,
-      "average_latency_ms": 0.4381838002445875,
-      "throughput_per_s": 2282.1473533293915
+      "load_time_s": 0.968,
+      "p50_latency_ms": 0.44284999603405595,
+      "p95_latency_ms": 0.4832700120459776,
+      "average_latency_ms": 0.4483019998879172,
+      "throughput_per_s": 2230.639167904708
     },
     {
       "model": "laya",
@@ -2338,11 +2717,11 @@
       "operating_threshold": 0.6106,
       "operating_hate_f1": 0.3287671232876712,
       "operating_accuracy": 0.7599837826880195,
-      "load_time_s": 3.896,
-      "p50_latency_ms": 36.11860000091838,
-      "p95_latency_ms": 38.38171000388683,
-      "average_latency_ms": 36.32328479993157,
-      "throughput_per_s": 27.530549770154156
+      "load_time_s": 3.815,
+      "p50_latency_ms": 34.54490000149235,
+      "p95_latency_ms": 36.36521499574882,
+      "average_latency_ms": 34.735254400380654,
+      "throughput_per_s": 28.78919464568658
     },
     {
       "model": "laya_semantic",
@@ -2364,11 +2743,11 @@
       "operating_threshold": 0.5805,
       "operating_hate_f1": 0.3387334315169367,
       "operating_accuracy": 0.4932090006081492,
-      "load_time_s": 0.934,
-      "p50_latency_ms": 34.3528499979584,
-      "p95_latency_ms": 39.46296000140135,
-      "average_latency_ms": 34.96278079976037,
-      "throughput_per_s": 28.60184393590495
+      "load_time_s": 1.099,
+      "p50_latency_ms": 35.093400001642294,
+      "p95_latency_ms": 36.46615000980091,
+      "average_latency_ms": 35.26373559932108,
+      "throughput_per_s": 28.357744379731926
     },
     {
       "model": "laya_binary",
@@ -2390,11 +2769,11 @@
       "operating_threshold": 0.7503,
       "operating_hate_f1": 0.3374827109266943,
       "operating_accuracy": 0.9028988445165214,
-      "load_time_s": 0.976,
-      "p50_latency_ms": 36.18714999902295,
-      "p95_latency_ms": 41.20057999462005,
-      "average_latency_ms": 36.992547400004696,
-      "throughput_per_s": 27.03247195136048
+      "load_time_s": 0.994,
+      "p50_latency_ms": 34.10420000000158,
+      "p95_latency_ms": 35.37722999972175,
+      "average_latency_ms": 34.227376000140794,
+      "throughput_per_s": 29.21637930982166
     },
     {
       "model": "laya_noul",
@@ -2416,11 +2795,37 @@
       "operating_threshold": 0.749,
       "operating_hate_f1": 0.3281471004243281,
       "operating_accuracy": 0.9037097101155483,
-      "load_time_s": 1.194,
-      "p50_latency_ms": 35.08544999931473,
-      "p95_latency_ms": 42.107750000650405,
-      "average_latency_ms": 35.79245379987697,
-      "throughput_per_s": 27.938850060160934
+      "load_time_s": 1.022,
+      "p50_latency_ms": 37.237099997582845,
+      "p95_latency_ms": 44.305509998230264,
+      "average_latency_ms": 37.99284799976158,
+      "throughput_per_s": 26.320743314801653
+    },
+    {
+      "model": "laya_finetuned",
+      "task": "three_class",
+      "accuracy": 0.9122237989053315,
+      "macro_f1": 0.7485003025795615,
+      "macro_precision": 0.7843842008729008,
+      "macro_recall": 0.7256187134440205,
+      "weighted_f1": 0.9066867491965422,
+      "hate_precision": 0.518918918918919,
+      "hate_recall": 0.3380281690140845,
+      "hate_f1": 0.4093816631130064,
+      "hate_average_precision": 0.3193726271179571,
+      "hate_support": 284,
+      "hate_fp": 89,
+      "hate_fn": 188,
+      "macro_f1_ci_low": 0.7275580965419711,
+      "macro_f1_ci_high": 0.7673479438328535,
+      "operating_threshold": 0.274,
+      "operating_hate_f1": 0.4173553719008265,
+      "operating_accuracy": 0.911818366105818,
+      "load_time_s": 0.98,
+      "p50_latency_ms": 34.305250002944376,
+      "p95_latency_ms": 35.603914989042096,
+      "average_latency_ms": 34.42508819999057,
+      "throughput_per_s": 29.048582074519533
     },
     {
       "model": "hatexplain",
@@ -2442,11 +2847,11 @@
       "operating_threshold": 0.12114835530519485,
       "operating_hate_f1": 0.36455696202531646,
       "operating_accuracy": 0.5894992904926009,
-      "load_time_s": 1.283,
-      "p50_latency_ms": 9.198100004141452,
-      "p95_latency_ms": 12.927439999475602,
-      "average_latency_ms": 9.667924799956381,
-      "throughput_per_s": 103.43481364320414
+      "load_time_s": 1.501,
+      "p50_latency_ms": 8.447199994407129,
+      "p95_latency_ms": 9.109594987239687,
+      "average_latency_ms": 8.512969800067367,
+      "throughput_per_s": 117.46781951371266
     }
   ],
   "calibration": {
@@ -3044,6 +3449,105 @@
       ],
       "base_rate": 0.05725806451612903
     },
+    "laya_finetuned": {
+      "positive": "hate speech",
+      "bins": 10,
+      "brier": 0.05506571796236558,
+      "ece": 0.05441521505376344,
+      "reliability": [
+        {
+          "bin": 0,
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 3558,
+          "mean_predicted": 0.0005129848229342328,
+          "observed_frequency": 0.03850477796514896,
+          "gap": 0.03799179314221472
+        },
+        {
+          "bin": 1,
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 13,
+          "mean_predicted": 0.1462923076923077,
+          "observed_frequency": 0.15384615384615385,
+          "gap": 0.007553846153846161
+        },
+        {
+          "bin": 2,
+          "lower": 0.2,
+          "upper": 0.30000000000000004,
+          "count": 6,
+          "mean_predicted": 0.2503666666666667,
+          "observed_frequency": 0.16666666666666666,
+          "gap": -0.08370000000000002
+        },
+        {
+          "bin": 3,
+          "lower": 0.30000000000000004,
+          "upper": 0.4,
+          "count": 4,
+          "mean_predicted": 0.33652499999999996,
+          "observed_frequency": 0.25,
+          "gap": -0.08652499999999996
+        },
+        {
+          "bin": 4,
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 3,
+          "mean_predicted": 0.45880000000000004,
+          "observed_frequency": 0.6666666666666666,
+          "gap": 0.2078666666666666
+        },
+        {
+          "bin": 5,
+          "lower": 0.5,
+          "upper": 0.6000000000000001,
+          "count": 2,
+          "mean_predicted": 0.5573,
+          "observed_frequency": 1.0,
+          "gap": 0.4427
+        },
+        {
+          "bin": 6,
+          "lower": 0.6000000000000001,
+          "upper": 0.7000000000000001,
+          "count": 2,
+          "mean_predicted": 0.6406499999999999,
+          "observed_frequency": 1.0,
+          "gap": 0.35935000000000006
+        },
+        {
+          "bin": 7,
+          "lower": 0.7000000000000001,
+          "upper": 0.8,
+          "count": 3,
+          "mean_predicted": 0.7368333333333332,
+          "observed_frequency": 0.0,
+          "gap": -0.7368333333333332
+        },
+        {
+          "bin": 8,
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 5,
+          "mean_predicted": 0.8484,
+          "observed_frequency": 0.4,
+          "gap": -0.4484
+        },
+        {
+          "bin": 9,
+          "lower": 0.9,
+          "upper": 1.0,
+          "count": 124,
+          "mean_predicted": 0.9969604838709678,
+          "observed_frequency": 0.5161290322580645,
+          "gap": -0.4808314516129033
+        }
+      ],
+      "base_rate": 0.05725806451612903
+    },
     "hatexplain": {
       "positive": "hate speech",
       "bins": 10,
@@ -3484,6 +3988,64 @@
         "hate_precision": 0.6842105263157895
       }
     ],
+    "laya_finetuned": [
+      {
+        "threshold": 0.0,
+        "coverage": 1.0,
+        "n": 4933,
+        "accuracy": 0.9122237989053315,
+        "hate_recall": 0.3380281690140845,
+        "hate_precision": 0.518918918918919
+      },
+      {
+        "threshold": 0.4,
+        "coverage": 0.9995945672004866,
+        "n": 4931,
+        "accuracy": 0.9125937943621983,
+        "hate_recall": 0.3392226148409894,
+        "hate_precision": 0.518918918918919
+      },
+      {
+        "threshold": 0.5,
+        "coverage": 0.9975674032029191,
+        "n": 4921,
+        "accuracy": 0.9134322292217029,
+        "hate_recall": 0.33687943262411346,
+        "hate_precision": 0.5191256830601093
+      },
+      {
+        "threshold": 0.6,
+        "coverage": 0.9933103588080275,
+        "n": 4900,
+        "accuracy": 0.9163265306122449,
+        "hate_recall": 0.34050179211469533,
+        "hate_precision": 0.5428571428571428
+      },
+      {
+        "threshold": 0.7,
+        "coverage": 0.989053314413136,
+        "n": 4879,
+        "accuracy": 0.9188358270137323,
+        "hate_recall": 0.336996336996337,
+        "hate_precision": 0.5476190476190477
+      },
+      {
+        "threshold": 0.8,
+        "coverage": 0.9858098520170282,
+        "n": 4863,
+        "accuracy": 0.9195969566111454,
+        "hate_recall": 0.3258426966292135,
+        "hate_precision": 0.5403726708074534
+      },
+      {
+        "threshold": 0.9,
+        "coverage": 0.9817555240218934,
+        "n": 4843,
+        "accuracy": 0.9213297542845343,
+        "hate_recall": 0.3166023166023166,
+        "hate_precision": 0.5290322580645161
+      }
+    ],
     "hatexplain": [
       {
         "threshold": 0.0,
@@ -3654,6 +4216,34 @@
       "test_after": {
         "brier": 0.2315803013257653,
         "ece": 0.4086698155280763
+      }
+    },
+    "laya_finetuned": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "temperature": [
+        5.0,
+        1.0,
+        1.0
+      ],
+      "temperature_by_options": {
+        "choice:3-5": 5.0
+      },
+      "fit_report": {
+        "ece_before": 0.0895119278055696,
+        "ece_after": 0.043199406865203675,
+        "n": 3720.0,
+        "n_eval": 744.0,
+        "buckets_excluded_from_eval": []
+      },
+      "labels_changed": 0,
+      "test_before": {
+        "brier": 0.05348888988647881,
+        "ece": 0.051747638353942825
+      },
+      "test_after": {
+        "brier": 0.0487684495438881,
+        "ece": 0.02548578958037705
       }
     }
   },
@@ -4376,6 +4966,74 @@
           "unique_scores": 25
         },
         "hate_decisions_changed_at_0_5": 2496
+      }
+    },
+    "laya_finetuned": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "test_before": {
+        "brier": 0.05348888988647881,
+        "ece": 0.051747638353942825,
+        "average_precision": 0.3193726271179571,
+        "unique_scores": 185
+      },
+      "platt": {
+        "params": {
+          "method": "platt",
+          "a": 0.15844285933931754,
+          "b": -1.1150258039867416
+        },
+        "test_after": {
+          "brier": 0.044489513285785216,
+          "ece": 0.007498518546132939,
+          "average_precision": 0.3193726271179571,
+          "unique_scores": 185
+        },
+        "hate_decisions_changed_at_0_5": 79
+      },
+      "isotonic": {
+        "params": {
+          "method": "isotonic",
+          "x": [
+            0.0,
+            0.0001,
+            0.0002,
+            0.1328,
+            0.1493,
+            0.2525,
+            0.274,
+            0.4381,
+            0.4469,
+            0.9788,
+            0.9867,
+            0.9936,
+            0.9947,
+            0.9999
+          ],
+          "y": [
+            0.03379186602870814,
+            0.10084033613445378,
+            0.11764705882352941,
+            0.11764705882352941,
+            0.2,
+            0.2,
+            0.2857142857142857,
+            0.2857142857142857,
+            0.45,
+            0.45,
+            0.5,
+            0.5,
+            0.5350877192982456,
+            0.5350877192982456
+          ]
+        },
+        "test_after": {
+          "brier": 0.04477706931923218,
+          "ece": 0.005648024185560799,
+          "average_precision": 0.2817034712974254,
+          "unique_scores": 17
+        },
+        "hate_decisions_changed_at_0_5": 40
       }
     },
     "hatexplain": {

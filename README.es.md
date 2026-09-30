@@ -31,7 +31,7 @@ bootstrap junto a la tabla habitual.
 
 ## Modelos comparados
 
-Ocho configuraciones, de tres enfoques conceptualmente distintos:
+Nueve configuraciones, de tres enfoques conceptualmente distintos:
 
 | Clave | Modelo | Tarea | Régimen de entrenamiento | ¿Entrenado con el train de Davidson? |
 | --- | --- | --- | --- | --- |
@@ -42,7 +42,12 @@ Ocho configuraciones, de tres enfoques conceptualmente distintos:
 | `laya_semantic` | Laya, choice 3 clases, definiciones explícitas — **L4** | 3 clases | Zero-shot | No |
 | `laya_binary` | Laya, choice de 2 opciones odio/no-odio — **L2** | odio vs resto | Zero-shot | No |
 | `laya_noul` | Laya, `noul` P(odio) — **L3** | odio vs resto | Zero-shot | No |
+| `laya_finetuned` | Laya, pregunta L1, **fine-tuned** | 3 clases | Supervisado (RLCD, ajustado aquí) | Sí |
 | `hatexplain` | `Hate-speech-CNERG/bert-base-uncased-hatexplain` | 3 clases | Preentrenado externo | No |
+
+`laya_finetuned` es **opt-in** (`run_benchmark.py --include-finetuned`): es un checkpoint
+de ~0,8 GB producido localmente en la fase 2A, así que un clon limpio sigue reproduciendo
+el benchmark zero-shot con un solo comando. Ver [docs/finetuning.md](docs/finetuning.md).
 
 > **Este benchmark compara enfoques de clasificación end-to-end bajo sus regímenes de
 > entrenamiento naturales; no es una comparación controlada arquitectura-vs-arquitectura.**
@@ -83,6 +88,7 @@ HateXplain BERT); después quedan en la caché de Hugging Face.
 python run_benchmark.py --list-models               # imprime las claves configuradas y sale
 python run_benchmark.py --limit 200                 # smoke test (marcado como tal)
 python run_benchmark.py --models laya,laya_binary   # solo algunas configuraciones
+python run_benchmark.py --include-finetuned          # + la fila de Laya fine-tuned (fase 2A)
 python run_benchmark.py --config my_experiment.yaml # configuración alternativa
 ```
 
@@ -179,6 +185,8 @@ laya-hate-speech-benchmark/
 ├── docs/PRD.md               # la especificación que esto implementa
 ├── scripts/
 │   ├── run_benchmark.py      # envoltorio fino (mismo punto de entrada)
+│   ├── build_laya_finetune_data.py  # fase 2A: split -> JSONL de fine-tuning
+│   ├── finetune_laya.py      # fase 2A: fine-tune RLCD en un solo dispositivo
 │   └── render_report.py      # re-renderiza el reporte sin re-ejecutar modelos
 ├── src/
 │   ├── config.py             # config tipada, etiquetas, tareas, regímenes
@@ -192,7 +200,7 @@ laya-hate-speech-benchmark/
 │       ├── base.py           # interfaz: task, predict_one, predict_batch
 │       ├── majority.py
 │       ├── tfidf.py
-│       ├── laya_model.py     # Laya zero-shot: choice/noul, N variantes, batching
+│       ├── laya_model.py     # Laya: variantes zero-shot + montaje del checkpoint fine-tuned
 │       └── hatexplain.py
 └── results/, report/         # generados, ignorados por git
 ```
@@ -206,7 +214,34 @@ laya-hate-speech-benchmark/
 - El único `TF-IDF + LR` y el único prompt de Laya del PRD pasaron a ser **variantes**
   (dos ajustes de pesos; cuatro formulaciones de Laya), porque compararlos separa una
   propiedad del modelo de una propiedad de su prior de entrenamiento o de su prompt.
-- El fine-tuning y Detoxify **no** están implementados.
+- El fine-tuning (fase 2A) está implementado como paso **opt-in**, documentado en
+  [docs/finetuning.md](docs/finetuning.md); Detoxify **no** está implementado.
+
+---
+
+## Fase 2A — fine-tuning de Laya (opt-in)
+
+El apartado 24 del PRD difiere el fine-tuning a la fase 2A. Aquí está implementado como
+un pipeline de dos pasos que produce un checkpoint local, que el arnés evalúa después
+exactamente igual que cualquier otra fila:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_laya_finetune_data.py
+.\.venv\Scripts\python.exe scripts\finetune_laya.py `
+    --data data\processed\laya_finetune_train.jsonl `
+    --eval-data data\processed\laya_finetune_validation.jsonl
+.\.venv\Scripts\python.exe run_benchmark.py --include-finetuned
+```
+
+El fine-tuning reutiliza la pregunta L1 tal cual, entrena solo con el split de train
+(16.130 filas, RLCD, 4 épocas) y nunca toca una fila de test. El test se puntúa una sola
+vez, con `run_benchmark.py`, después del entrenamiento.
+
+Por tanto se reportan dos regímenes de entrenamiento de Laya — **zero-shot** (los
+checkpoints publicados) y **supervisado fine-tuned** (este local) — y nunca se mezclan.
+El reporte lleva la dirección predicha antes de la corrida, para juzgarla contra la
+medición en vez de recordarla a posteriori. Protocolo completo, coste medido y límites
+honestos: [docs/finetuning.md](docs/finetuning.md).
 
 ---
 
@@ -224,7 +259,7 @@ laya-hate-speech-benchmark/
 | Ajuste de temperaturas + calibración del score de odio (Platt/isotonic) | Hecho |
 | Generalización a un segundo dataset | **Falta** |
 | Codificación cualitativa de errores | Solo mecánica |
-| Fine-tuning de Laya con el train | **Falta (fase 2)** |
+| Fine-tuning de Laya con el train | Hecho (fase 2A), opt-in con `--include-finetuned` |
 
 ### Bug de upstream encontrado por este benchmark
 

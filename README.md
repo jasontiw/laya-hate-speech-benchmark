@@ -31,18 +31,23 @@ usual table.
 
 ## Models compared
 
-Eight configurations, from three conceptually different approaches:
+Nine configurations, from three conceptually different approaches:
 
 | Key | Model | Task | Training regime | Trained on the Davidson train split? |
 | --- | --- | --- | --- | --- |
 | `majority` | Majority-class baseline | 3-class | Baseline | No |
 | `tfidf` | TF-IDF + Logistic Regression | 3-class | Supervised (fit here) | Yes |
 | `tfidf_balanced` | Same, `class_weight="balanced"` | 3-class | Supervised (fit here) | Yes |
-| `laya` | Laya, 3-class choice — **L1** | 3-class | Zero-shot | No |
-| `laya_semantic` | Laya, 3-class choice, explicit definitions — **L4** | 3-class | Zero-shot | No |
-| `laya_binary` | Laya, 2-option choice hate/not-hate — **L2** | hate vs rest | Zero-shot | No |
-| `laya_noul` | Laya, `noul` P(hate) — **L3** | hate vs rest | Zero-shot | No |
+| `laya` | Laya, 3-class choice - **L1** | 3-class | Zero-shot | No |
+| `laya_semantic` | Laya, 3-class choice, explicit definitions - **L4** | 3-class | Zero-shot | No |
+| `laya_binary` | Laya, 2-option choice hate/not-hate - **L2** | hate vs rest | Zero-shot | No |
+| `laya_noul` | Laya, `noul` P(hate) - **L3** | hate vs rest | Zero-shot | No |
+| `laya_finetuned` | Laya, L1 question, **fine-tuned** | 3-class | Supervised (RLCD, fit here) | Yes |
 | `hatexplain` | `Hate-speech-CNERG/bert-base-uncased-hatexplain` | 3-class | Pretrained externally | No |
+
+`laya_finetuned` is **opt-in** (`run_benchmark.py --include-finetuned`): it is a ~0.8 GB
+checkpoint produced locally by phase 2A, so a fresh clone still reproduces the zero-shot
+benchmark with one command. See [docs/finetuning.md](docs/finetuning.md).
 
 > **This benchmark compares end-to-end classification approaches under their natural
 > training regimes; it is not a controlled architecture-vs-architecture comparison.**
@@ -83,6 +88,7 @@ HateXplain BERT); those are cached by Hugging Face afterwards.
 python run_benchmark.py --list-models               # print the configured model keys and exit
 python run_benchmark.py --limit 200                 # dev smoke run (clearly marked as such)
 python run_benchmark.py --models laya,laya_binary   # only some configurations
+python run_benchmark.py --include-finetuned          # + the phase-2A fine-tuned Laya row
 python run_benchmark.py --config my_experiment.yaml # alternative config
 ```
 
@@ -178,6 +184,8 @@ laya-hate-speech-benchmark/
 ├── docs/PRD.md               # the specification this implements
 ├── scripts/
 │   ├── run_benchmark.py      # thin wrapper (same entry point)
+│   ├── build_laya_finetune_data.py  # phase 2A: benchmark split -> fine-tuning JSONL
+│   ├── finetune_laya.py      # phase 2A: single-device RLCD fine-tune
 │   └── render_report.py      # re-render the report without re-running models
 ├── src/
 │   ├── config.py             # typed config, canonical labels, tasks, training regimes
@@ -191,7 +199,7 @@ laya-hate-speech-benchmark/
 │       ├── base.py           # interface: task, predict_one, predict_batch
 │       ├── majority.py
 │       ├── tfidf.py
-│       ├── laya_model.py     # Laya zero-shot: choice/noul, N variants, batching
+│       ├── laya_model.py     # Laya: zero-shot variants + fine-tuned checkpoint mount
 │       └── hatexplain.py
 └── results/, report/         # generated, git-ignored
 ```
@@ -205,7 +213,34 @@ laya-hate-speech-benchmark/
 - The PRD's single `TF-IDF + LR` and single Laya prompt became **variants** (two weight
   settings; four Laya formulations), because comparing them separates a property of the
   model from a property of its training prior or its prompt.
-- Fine-tuning and Detoxify are **not** implemented.
+- Fine-tuning (Phase 2A) is implemented as an **opt-in** step, documented in
+  [docs/finetuning.md](docs/finetuning.md); Detoxify is **not** implemented.
+
+---
+
+## Phase 2A — fine-tuning Laya (opt-in)
+
+PRD section 24 defers fine-tuning to Phase 2A. It is implemented here as a two-step
+pipeline that produces a local checkpoint, which the harness then evaluates exactly like
+any other row:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_laya_finetune_data.py
+.\.venv\Scripts\python.exe scripts\finetune_laya.py `
+    --data data\processed\laya_finetune_train.jsonl `
+    --eval-data data\processed\laya_finetune_validation.jsonl
+.\.venv\Scripts\python.exe run_benchmark.py --include-finetuned
+```
+
+The fine-tune reuses the L1 question verbatim, trains on the train split only (16,130
+rows, RLCD, 4 epochs), and never touches a test row. The test split is scored once, by
+`run_benchmark.py`, after training.
+
+Two Laya training regimes are therefore reported — **zero-shot** (the published
+checkpoints) and **supervised fine-tuned** (this local one) — and they are never pooled.
+The report carries the direction predicted before the run, so it is judged against the
+measurement instead of remembered afterwards. Full protocol, measured cost and honest
+limits: [docs/finetuning.md](docs/finetuning.md).
 
 ---
 
@@ -223,7 +258,7 @@ laya-hate-speech-benchmark/
 | Temperature fitting + hate-score calibration (Platt/isotonic) | Done |
 | Generalization to a second dataset | **Missing** |
 | Qualitative error coding | Mechanical only |
-| Fine-tuning Laya on the train split | **Missing (phase 2)** |
+| Fine-tuning Laya on the train split | Done (phase 2A), opt-in via `--include-finetuned` |
 
 ### Upstream issue found by this benchmark
 
