@@ -486,6 +486,14 @@ def run_benchmark(
         reporting.plot_pr_curve(curves, results_dir)
         log("artifacts: pr_curve_hate_vs_rest.png")
 
+    # Remove confusion matrices left behind by a previous configuration whose model
+    # keys no longer exist, so results/ does not accumulate orphaned figures.
+    current_figures = {"confusion_matrix_%s.png" % key for key in metrics_by_model}
+    for stale in results_dir.glob("confusion_matrix_*.png"):
+        if stale.name not in current_figures:
+            stale.unlink()
+            log("artifacts: removed stale %s" % stale.name)
+
     for key, entry in metrics_by_model.items():
         reporting.plot_confusion_matrix(entry, key, results_dir)
     log("artifacts: confusion matrices")
