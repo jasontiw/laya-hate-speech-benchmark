@@ -1,0 +1,78 @@
+# Experiment configuration — Local Hate Speech Detection Benchmark.
+#
+# This file is the single source of truth for a run. It is copied verbatim into
+# results/experiment_config.json, so any result can be traced back to its settings.
+
+dataset:
+  name: tdavidson/hate_speech_offensive
+  description: >-
+    Davidson et al., "Automated Hate Speech Detection and the Problem of Offensive
+    Language" (ICWSM 2017). 24,783 English tweets labeled into three classes.
+  # Original labeled CSV from the authors' repository.
+  url: https://raw.githubusercontent.com/t-davidson/hate-speech-and-offensive-language/master/data/labeled_data.csv
+  # SHA-256 of the downloaded file. Verified at every run. Set to null to record
+  # without verifying (not recommended).
+  sha256: fcb8bc7c68120ae4af04a5b9acd58585513ede11e1548ebf36a5c2040b6f6281
+  text_column: tweet
+  class_column: class
+  labels:
+    0: hate speech
+    1: offensive language
+    2: neither
+
+split:
+  test_size: 0.2
+  seed: 42
+  # Normalization is used ONLY to detect duplicate/near-duplicate tweets so that
+  # copies cannot straddle the train/test boundary. Models always see the raw tweet.
+  normalize:
+    lowercase: true
+    strip_urls: true
+    strip_mentions: true
+    strip_rt: true
+    strip_punctuation: false
+    collapse_whitespace: true
+
+models:
+  majority:
+    enabled: true
+
+  tfidf:
+    enabled: true
+    ngram_range: [1, 2]
+    min_df: 2
+    max_df: 1.0
+    sublinear_tf: true
+    max_iter: 1000
+    C: 1.0
+    class_weight: null
+
+  laya:
+    enabled: true
+    repo: convaiinnovations/laya
+    subfolder: null
+    # Pin a Hub commit/tag here for byte-exact reproducibility. null = current main.
+    revision: null
+    device: null          # null -> cuda, else mps, else cpu
+    max_len: 512
+    instructions: Classify the language of this message.
+    criteria:
+      hate speech: language attacking or expressing hostility toward a protected group.
+      offensive language: rude, insulting, profane, or abusive language that does not constitute hate speech.
+      neither: language that does not belong to either category.
+
+  hatexplain:
+    enabled: true
+    model_id: Hate-speech-CNERG/bert-base-uncased-hatexplain
+    revision: null
+    device: null
+    max_length: 128
+
+inference:
+  # Untimed calls made before measuring latency (first call warms up CUDA kernels).
+  warmup: 5
+
+output:
+  results_dir: results
+  report_dir: report
+  error_samples_per_category: 50

@@ -1,0 +1,32 @@
+[project]
+name = "laya-hate-speech-benchmark"
+version = "0.1.0"
+description = "Local, reproducible benchmark of Laya against classical and specialised hate-speech classifiers on the Davidson dataset."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+
+dependencies = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "laya>=0.3.21",
+    "scikit-learn>=1.3",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "PyYAML>=6.0",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src", "src.models"]
+
+[tool.ruff]
+line-length = 120
