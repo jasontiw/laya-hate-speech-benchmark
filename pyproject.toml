@@ -16,6 +16,8 @@ dependencies = [
     "matplotlib>=3.7",
     "PyYAML>=6.0",
     "tqdm>=4.66",
+    "safetensors>=0.4",
+    "huggingface_hub>=0.23",
 ]
 
 [project.optional-dependencies]

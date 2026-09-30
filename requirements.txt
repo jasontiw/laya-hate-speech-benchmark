@@ -19,3 +19,9 @@ numpy>=1.24
 matplotlib>=3.7
 PyYAML>=6.0
 tqdm>=4.66
+
+# Imported directly by scripts/finetune_laya.py (phase 2A) and by the harness's
+# Hub-revision lookup; both are transitive deps of transformers/laya, pinned here so
+# the fine-tuning path does not depend on that staying true.
+safetensors>=0.4
+huggingface_hub>=0.23

@@ -50,11 +50,21 @@ report/*
 !report/.gitkeep
 
 # ---------------------------------------------------------------------------
-# Local model caches — anchored to the root so it never matches src/models/.
+# Local model caches - anchored to the root so it never matches src/models/.
 # Only relevant if HF_HOME is set inside the project.
 # ---------------------------------------------------------------------------
 /models/
 .cache/
+
+# ---------------------------------------------------------------------------
+# Phase 2A fine-tuned checkpoints (~0.8 GB each). Derived, reproducible with:
+#     python scripts/build_laya_finetune_data.py
+#     python scripts/finetune_laya.py --data data/processed/laya_finetune_train.jsonl
+# ---------------------------------------------------------------------------
+/artifacts/
+
+# CodeGraph's local index - derived, machine-specific, regenerated on demand.
+/.codegraph/
 
 # ---------------------------------------------------------------------------
 # Editors and OS
