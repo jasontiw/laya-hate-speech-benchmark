@@ -167,6 +167,10 @@ class CalibrationConfig:
     # probabilities. See src/laya_calibration.py.
     fit_temperatures: bool = True
     seed: int = 42
+    # Monotone maps for the hate score itself (Platt scaling, isotonic regression).
+    # Fitted on validation, measured on test. They cannot change a ranking or a
+    # prediction, only whether the probability means what it says.
+    score_methods: List[str] = field(default_factory=lambda: ["platt", "isotonic"])
 
 
 @dataclass

@@ -152,6 +152,9 @@ calibration:
   # Needs the full validation split (the fitter's per-bucket floor is 2000 records).
   fit_temperatures: true
   seed: 42
+  # Monotone maps for the hate score itself: fitted on validation, measured on test.
+  # They cannot change a ranking or a prediction, only whether p(hate) means what it says.
+  score_methods: [platt, isotonic]
 
 output:
   results_dir: results

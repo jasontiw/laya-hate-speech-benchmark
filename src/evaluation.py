@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from . import reporting
+from . import reporting, score_calibration
 from .calibration import brier_score, calibration_report, reliability_bins
 from .config import (
     CANONICAL_LABELS,
@@ -423,6 +423,8 @@ def run_benchmark(
     calibration_by_model: Dict[str, Any] = {}
     coverage_by_model: Dict[str, Any] = {}
     recalibration_by_model: Dict[str, Any] = {}
+    score_calibration_by_model: Dict[str, Any] = {}
+    validation_scores_by_model: Dict[str, Any] = {}
 
     for key, result in results.items():
         task = result.task
@@ -447,6 +449,7 @@ def run_benchmark(
         validation_scores = None
         if validation_by_model[key]["probabilities"] is not None:
             validation_scores = hate_score_array(validation_by_model[key]["probabilities"])
+            validation_scores_by_model[key] = validation_scores
 
         if scores is not None:
             entry["hate"]["average_precision"] = binary_average_precision(gold, scores)
@@ -483,6 +486,15 @@ def run_benchmark(
             }
             recalibration_by_model[key] = entry["recalibration"]
 
+        # Monotone maps on the hate score itself: fitted on validation, measured on test.
+        # These cannot change a ranking or a prediction, only the meaning of the number.
+        if scores is not None and validation_scores is not None and cfg.calibration.score_methods:
+            entry["score_calibration"] = score_calibration.compare(
+                validation_scores, validation_gold, scores, gold,
+                bins=cfg.calibration.bins, methods=cfg.calibration.score_methods,
+            )
+            score_calibration_by_model[key] = entry["score_calibration"]
+
         confidence_column = f"{key}_confidence"
         if confidence_column in predictions.columns and predictions[confidence_column].notna().any():
             confidences = predictions[confidence_column].tolist()
@@ -498,6 +510,15 @@ def run_benchmark(
         )
         metrics_by_model[key] = entry
 
+    if validation_scores_by_model:
+        # Scores only, no tweet text: safe to keep, and it makes the calibration analysis
+        # reproducible offline without re-running any model.
+        score_frame = validation_df[["id", "gold_label"]].copy()
+        for key, values in validation_scores_by_model.items():
+            score_frame[f"{key}_hate_score"] = values
+        score_frame.to_csv(results_dir / "validation_scores.csv", index=False)
+        log("artifacts: validation_scores.csv (%d rows, scores only)" % len(score_frame))
+
     comparison_rows = comparison_table(metrics_by_model)
     pd.DataFrame(comparison_rows).to_csv(results_dir / "model_comparison.csv", index=False)
     write_json(results_dir / "metrics.json", {
@@ -506,6 +527,7 @@ def run_benchmark(
         "calibration": calibration_by_model,
         "coverage": coverage_by_model,
         "recalibration": recalibration_by_model,
+        "score_calibration": score_calibration_by_model,
     })
     log("artifacts: metrics.json, model_comparison.csv")
 
@@ -588,6 +610,7 @@ def run_benchmark(
         "calibration": calibration_by_model,
         "coverage": coverage_by_model,
         "recalibration": recalibration_by_model,
+        "score_calibration": score_calibration_by_model,
         "training_regime": {key: entry["training_regime"] for key, entry in metrics_by_model.items()},
         "debug_limit": limit,
         "test_rows_used": int(len(test_df)),

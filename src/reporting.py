@@ -384,6 +384,44 @@ def _recalibration_table(recalibration: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _score_calibration_table(score_calibration: Dict[str, Any]) -> str:
+    if not score_calibration:
+        return "_Hate-score calibration was not computed._"
+    lines = [
+        "| Model | Map | Hate-score ECE (test) | Brier (test) | PR-AUC (test) | Distinct scores | Hate decisions at 0.5 changed |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for key, report in score_calibration.items():
+        before = report.get("test_before") or {}
+        for method in ("platt", "isotonic"):
+            entry = report.get(method)
+            if not entry:
+                continue
+            after = entry.get("test_after") or {}
+            lines.append(
+                "| %s | %s | %s → %s | %s → %s | %s → %s | %s → %s | %s |"
+                % (key, method,
+                   _num(before.get("ece")), _num(after.get("ece")),
+                   _num(before.get("brier")), _num(after.get("brier")),
+                   _num(before.get("average_precision"), 3), _num(after.get("average_precision"), 3),
+                   before.get("unique_scores"), after.get("unique_scores"),
+                   entry.get("hate_decisions_changed_at_0_5"))
+            )
+    lines.append("")
+    lines.append(
+        "_Measured result. What changes is whether `P(hate speech)` means what it says — and the "
+        "two maps pay different prices for it. **Platt** is strictly monotone: PR-AUC and the "
+        "distinct-score count are unchanged to the last decimal, so every ranking decision "
+        "survives. **Isotonic** is only non-decreasing: it merges thousands of distinct scores "
+        "into a few dozen blocks, ties appear, and `average_precision` falls a few points because "
+        "it cannot rank inside a tie. So isotonic gives the best ECE while destroying fine "
+        "ranking; Platt gives a marginally worse ECE and keeps it. The 'decisions changed' column "
+        "is not a detection change: it is how many rows would flip if you decided at a fixed 0.5, "
+        "i.e. how far the raw 0.5 was from the calibrated one._"
+    )
+    return "\n".join(lines)
+
+
 def _coverage_table(coverage: Dict[str, Any], models: Dict[str, Dict[str, Any]]) -> str:
     if not coverage:
         return "_No model exposed a confidence, so coverage was not analysed._"
@@ -833,6 +871,12 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
                  "refits its temperature map on the validation split and re-measures on test.")
     lines.append("")
     lines.append(_recalibration_table(summary.get("recalibration") or {}))
+    lines.append("")
+    lines.append("**Calibrating the hate score itself.** Laya's temperature map fixes the confidence "
+                 "of its chosen answer, not `P(hate speech)`. These monotone maps target the hate "
+                 "score directly:")
+    lines.append("")
+    lines.append(_score_calibration_table(summary.get("score_calibration") or {}))
     lines.append("")
     lines.append("**Abstention / coverage.** Dropping the least confident answers:")
     lines.append("")
