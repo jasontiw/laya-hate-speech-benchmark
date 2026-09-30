@@ -103,6 +103,7 @@ results/
 ├── model_comparison.csv           # la tabla comparativa principal
 ├── operating_points.csv           # decisión natural vs umbral elegido en validación
 ├── coverage.csv                   # coverage / accuracy / recall de odio vs confianza
+├── validation_scores.csv          # scores de odio por modelo en validación (sin texto de tweets)
 ├── error_analysis.csv             # errores agrupados por categoría (gold -> predicho)
 ├── confusion_matrix_<model>.png
 ├── pr_curve_hate_vs_rest.png      # precisión/recall hate-vs-rest, una línea por modelo
@@ -220,7 +221,7 @@ laya-hate-speech-benchmark/
 | Inferencia batcheada con throughput separado | Hecho |
 | Formulaciones binarias (choice, `noul`) | Hecho |
 | Calibración medida (Brier, ECE, fiabilidad) | Hecho |
-| Ajuste de temperaturas / recalibración | Hecho (`results/calibration_<model>.json`) |
+| Ajuste de temperaturas + calibración del score de odio (Platt/isotonic) | Hecho |
 | Generalización a un segundo dataset | **Falta** |
 | Codificación cualitativa de errores | Solo mecánica |
 | Fine-tuning de Laya con el train | **Falta (fase 2)** |
@@ -236,16 +237,38 @@ no altera el comportamiento; el arreglo corresponde a upstream.
 
 ### Recalibración
 
-Los checkpoints publicados de Laya salen sobre-confiados, así que el pipeline reajusta su
-**mapa de temperaturas** sobre el split de validación, lo guarda como
-`results/calibration_<model>.json` y vuelve a medir Brier y ECE en test. El escalado por
-temperatura es monótono, así que no puede cambiar una etiqueta predicha — el reporte lo
-**verifica** (la columna "labels changed" debe ser 0) en vez de asumirlo. Carga el mapa
-ajustado con:
+Se calibran **dos cosas distintas**, y el benchmark mide ambas porque **no** son la misma
+cantidad:
+
+1. **El mapa de temperaturas de Laya** (`src/laya_calibration.py`), ajustado en validación
+   y guardado como `results/calibration_<model>.json`. Calibra la confianza de la
+   respuesta que Laya *eligió*. Medido: eso lo arregla (ECE held-out 0,089 → 0,026 en la
+   variante binaria) y apenas mueve `P(hate speech)`.
+2. **Un mapa monótono sobre el score de odio** (`src/score_calibration.py`): Platt scaling
+   e isotonic regression, ajustados en validación y medidos en test. Esta es la cantidad
+   que un detector umbraliza, y **es la que funciona**: reduce el ECE del score de odio de
+   Laya en aproximadamente un orden de magnitud.
+
+Ambos mapas son monótonos, así que ninguno puede cambiar una **predicción**. Lo que difiere es
+lo que le cuestan al ranking:
+
+- **Platt scaling** es estrictamente monótono, así que el PR-AUC y todas las métricas de
+  clasificación son idénticas antes y después (medido: delta 0, hasta el último decimal).
+- **Isotonic regression** es solo no-decreciente: fusiona miles de scores distintos en unas
+  pocas docenas de bloques, aparecen empates, y `average_precision` cae unos puntos porque no
+  puede ordenar dentro de un empate. El mejor ECE, a costa de un ranking más grueso.
+
+La recalibración compra confianza en el número, no rendimiento de detección — y el reporte
+**mide** la invariancia en vez de afirmarla.
+
+Para reutilizar un mapa ajustado dentro de Laya:
 
 ```python
 agent = laya.load("convaiinnovations/laya", calibration="results/calibration_laya.json")
 ```
+
+Los mapas del score de odio son números planos (dos coeficientes para Platt, dos arrays
+para isotonic), así que `src/score_calibration.py` los aplica sin dependencias extra.
 
 ---
 
@@ -272,29 +295,6 @@ re-ejecutar ningún modelo:
 
 ```bash
 python scripts/render_report.py
-```
-
----
-
-## Publicar en GitHub
-
-El entorno virtual, el dataset descargado y todos los artefactos generados están
-ignorados por git, así que un clon limpio queda pequeño y los reconstruye con un comando.
-
-```bash
-git init
-git add .
-git commit -m "feat: benchmark local de discurso de odio comparando formulaciones de Laya"
-git branch -M main
-git remote add origin https://github.com/<tu-usuario>/<tu-repo>.git
-git push -u origin main
-```
-
-Para publicar igualmente un resultado generado concreto:
-
-```bash
-git add -f report/benchmark_report.md results/model_comparison.csv
-git commit -m "docs: añade el reporte del benchmark de <fecha>"
 ```
 
 ---

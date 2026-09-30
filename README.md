@@ -103,6 +103,7 @@ results/
 ├── model_comparison.csv           # the main comparison table
 ├── operating_points.csv           # natural decision vs validation-selected threshold
 ├── coverage.csv                   # coverage / accuracy / hate recall vs confidence
+├── validation_scores.csv          # per-model validation hate scores (no tweet text)
 ├── error_analysis.csv             # misclassified examples by (gold -> predicted)
 ├── confusion_matrix_<model>.png
 ├── pr_curve_hate_vs_rest.png      # hate-vs-rest precision/recall, one line per model
@@ -219,7 +220,7 @@ laya-hate-speech-benchmark/
 | Batched inference with separate throughput | Done |
 | Binary formulations (choice, `noul`) | Done |
 | Calibration measured (Brier, ECE, reliability) | Done |
-| Temperature fitting / recalibration | Done (`results/calibration_<model>.json`) |
+| Temperature fitting + hate-score calibration (Platt/isotonic) | Done |
 | Generalization to a second dataset | **Missing** |
 | Qualitative error coding | Mechanical only |
 | Fine-tuning Laya on the train split | **Missing (phase 2)** |
@@ -235,15 +236,38 @@ workaround; the fix belongs upstream.
 
 ### Recalibration
 
-Laya's published checkpoints are over-confident, so the pipeline refits its
-**temperature map** on the validation split, saves it as
-`results/calibration_<model>.json`, and re-measures Brier and ECE on test. Temperature
-scaling is monotone, so it cannot change a predicted label — the report asserts that
-("labels changed" must be 0) instead of assuming it. Load the fitted map with:
+Two different things are calibrated, and the benchmark measures both because they are
+**not** the same quantity:
+
+1. **Laya's temperature map** (`src/laya_calibration.py`), fitted on validation and saved
+   as `results/calibration_<model>.json`. It calibrates the confidence of the answer Laya
+   *picked*. Measured: it fixes that (held-out ECE 0.089 → 0.026 for the binary variant)
+   and barely moves `P(hate speech)` at all.
+2. **A monotone map on the hate score itself** (`src/score_calibration.py`): Platt scaling
+   and isotonic regression, fitted on validation and measured on test. This is the
+   quantity a detector thresholds, and it is the one that works — it cuts Laya's
+   hate-score ECE by roughly an order of magnitude.
+
+Both maps are monotone, so neither can change a **prediction**. They differ in what they cost
+to the ranking:
+
+- **Platt scaling** is strictly monotone, so PR-AUC and every classification metric are
+  byte-identical before and after (measured: delta 0, to the last decimal).
+- **Isotonic regression** is only non-decreasing: it merges thousands of distinct scores into
+  a few dozen blocks, ties appear, and `average_precision` falls a few points because it
+  cannot rank inside a tie. Best ECE, coarser ranking.
+
+Recalibration buys trust in the number, not detection performance — and the report *measures*
+the invariance instead of asserting it.
+
+To reuse a fitted map inside Laya:
 
 ```python
 agent = laya.load("convaiinnovations/laya", calibration="results/calibration_laya.json")
 ```
+
+The hate-score maps are plain numbers (two coefficients for Platt, two arrays for
+isotonic), so `src/score_calibration.py` applies them with no extra dependency.
 
 ---
 
@@ -269,29 +293,6 @@ re-running any model:
 
 ```bash
 python scripts/render_report.py
-```
-
----
-
-## Publishing to GitHub
-
-The virtual environment, the downloaded dataset and every generated artifact are
-git-ignored, so a fresh clone stays small and rebuilds them with one command.
-
-```bash
-git init
-git add .
-git commit -m "feat: local hate speech benchmark comparing Laya formulations with baselines"
-git branch -M main
-git remote add origin https://github.com/<your-user>/<your-repo>.git
-git push -u origin main
-```
-
-To publish a specific generated result anyway:
-
-```bash
-git add -f report/benchmark_report.md results/model_comparison.csv
-git commit -m "docs: add benchmark report for <date>"
 ```
 
 ---
