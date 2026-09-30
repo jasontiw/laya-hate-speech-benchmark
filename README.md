@@ -9,22 +9,47 @@ on the **same public dataset** and the **same test rows**.
 Research question:
 
 > How does Laya perform on a known hate-speech dataset compared with other local
-> classification approaches when all models are evaluated on the same examples and
-> with the same metrics?
+> classifiers on the same examples and metrics — and which **Laya formulation**
+> (three-class choice, binary choice, `noul`, explicit definitions) gives the best
+> hate-recall / precision / cost trade-off?
 
 This is a research benchmark, **not** a production moderation system. It reduces to
 one command and a set of generated artifacts.
 
 ---
 
+## The finding this benchmark is built around
+
+The models do not simply rank by quality — they **disagree about what counts as hate
+speech**. On the same test rows, one model is precise and rarely fires; another fires
+often and catches far more hate speech at a large precision cost. Aggregate accuracy
+hides this, so the benchmark reports hate-vs-rest metrics, PR-AUC, an operating point
+selected on validation, coverage, calibration and bootstrap intervals alongside the
+usual table.
+
+---
+
 ## Models compared
 
-| Key | Model | Trained here? | Probabilities |
-| --- | --- | --- | --- |
-| `majority` | Majority-class baseline | fit on train split | no |
-| `tfidf` | TF-IDF + Logistic Regression | fit on train split | yes |
-| `laya` | Laya (zero-shot `choice` question) | no | yes |
-| `hatexplain` | `Hate-speech-CNERG/bert-base-uncased-hatexplain` | no | yes |
+Eight configurations, from three conceptually different approaches:
+
+| Key | Model | Task | Training regime | Trained on the Davidson train split? |
+| --- | --- | --- | --- | --- |
+| `majority` | Majority-class baseline | 3-class | Baseline | No |
+| `tfidf` | TF-IDF + Logistic Regression | 3-class | Supervised (fit here) | Yes |
+| `tfidf_balanced` | Same, `class_weight="balanced"` | 3-class | Supervised (fit here) | Yes |
+| `laya` | Laya, 3-class choice — **L1** | 3-class | Zero-shot | No |
+| `laya_semantic` | Laya, 3-class choice, explicit definitions — **L4** | 3-class | Zero-shot | No |
+| `laya_binary` | Laya, 2-option choice hate/not-hate — **L2** | hate vs rest | Zero-shot | No |
+| `laya_noul` | Laya, `noul` P(hate) — **L3** | hate vs rest | Zero-shot | No |
+| `hatexplain` | `Hate-speech-CNERG/bert-base-uncased-hatexplain` | 3-class | Pretrained externally | No |
+
+> **This benchmark compares end-to-end classification approaches under their natural
+> training regimes; it is not a controlled architecture-vs-architecture comparison.**
+
+In particular, `tfidf` is fit on the in-domain training split while `laya` and
+`hatexplain` are used as published. A higher score for a supervised model is expected
+and is not evidence that its architecture is better.
 
 Dataset: **Davidson** (`tdavidson/hate_speech_offensive`), 24,783 English tweets,
 three classes — `hate speech` (0), `offensive language` (1), `neither` (2).
@@ -47,23 +72,22 @@ uv pip install -r requirements.txt
 .\.venv\Scripts\python.exe run_benchmark.py
 ```
 
-On macOS/Linux use `.venv/bin/python run_benchmark.py`, or simply `python` inside an
-activated virtual environment.
+On macOS/Linux use `.venv/bin/python run_benchmark.py`.
 
-The first run downloads the dataset (~2.5 MB) and the model checkpoints
-(Laya English, HateXplain BERT); those are cached by Hugging Face afterwards.
+The first run downloads the dataset (~2.5 MB) and the model checkpoints (Laya English,
+HateXplain BERT); those are cached by Hugging Face afterwards.
 
 ### Useful flags
 
 ```bash
-python run_benchmark.py --limit 200                  # fast dev smoke run (clearly marked "not a benchmark result")
-python run_benchmark.py --models tfidf,laya          # only some models
-python run_benchmark.py --config my_experiment.yaml  # alternative config
-python run_benchmark.py --list-models                # print model keys and exit
+python run_benchmark.py --list-models               # print the configured model keys and exit
+python run_benchmark.py --limit 200                 # dev smoke run (clearly marked as such)
+python run_benchmark.py --models laya,laya_binary   # only some configurations
+python run_benchmark.py --config my_experiment.yaml # alternative config
 ```
 
-Every run is driven by [`config.yaml`](config.yaml); that file is copied verbatim
-into `results/experiment_config.json`.
+Every run is driven by [`config.yaml`](config.yaml); that file is copied verbatim into
+`results/experiment_config.json`.
 
 ---
 
@@ -71,24 +95,26 @@ into `results/experiment_config.json`.
 
 ```
 results/
-├── dataset_metadata.json     # source, SHA-256, rows, class distribution
-├── experiment_config.json    # config + hardware/runtime + resolved model revisions
-├── split.json                # seed, counts, and the exact test id list
-├── predictions.csv           # one row per test tweet, all model predictions + probabilities
-├── metrics.json              # full metrics per model
-├── model_comparison.csv      # the PRD section 21 comparison table
-├── error_analysis.csv        # misclassified examples by (gold -> predicted) category
+├── dataset_metadata.json          # source, SHA-256, rows, class distribution
+├── experiment_config.json         # config + hardware/runtime + resolved model revisions
+├── split.json                     # seed, counts, and the exact train/validation/test ids
+├── predictions.csv                # one row per test tweet, all predictions + probabilities
+├── metrics.json                   # metrics, CI, operating points, calibration, coverage
+├── model_comparison.csv           # the main comparison table
+├── operating_points.csv           # natural decision vs validation-selected threshold
+├── coverage.csv                   # coverage / accuracy / hate recall vs confidence
+├── error_analysis.csv             # misclassified examples by (gold -> predicted)
 ├── confusion_matrix_<model>.png
+├── pr_curve_hate_vs_rest.png      # hate-vs-rest precision/recall, one line per model
 └── report.md
 
 report/
-└── benchmark_report.md       # the final deliverable
+└── benchmark_report.md            # the final deliverable
 ```
 
-`benchmark_report.md` has the 16 sections required by the PRD (executive summary,
-dataset, setup, models, methodology, overall and hate-specific results, confusion
-matrices, latency, error analysis, Laya analysis, limitations, conclusions,
-reproduction instructions, references).
+`benchmark_report.md` covers the PRD's 16 sections and, inside them, the v1.1 material:
+training regimes, bootstrap CIs, binary variants, batching latency, coverage,
+calibration and a known-gaps checklist.
 
 ---
 
@@ -96,22 +122,46 @@ reproduction instructions, references).
 
 - **Dataset handling.** Downloaded programmatically, SHA-256 verified, never edited,
   original labels preserved.
-- **Split.** Fixed stratified 80/20 split with a deterministic seed. Tweets that
-  normalize to the same string are kept in the same split, so a duplicated tweet
-  cannot leak from train to test. Normalization is used *only* to detect duplicates —
-  models always see the raw tweet text.
-- **Laya question.** Hate-speech detection is posed as a Laya `choice` question with
-  the three labels and their descriptions. No fine-tuning.
-- **HateXplain mapping.** Its `id2label` is read from the model config and mapped
-  onto the canonical labels (`hate speech -> hate speech`, `offensive -> offensive
-  language`, `normal -> neither`). The raw mapping is recorded in the report.
-- **Metrics.** Accuracy, macro F1, macro precision/recall, per-class precision/recall/F1,
-  confusion matrices, and hate-specific precision/recall/F1 with false-positive and
-  false-negative counts.
-- **Latency.** Per-item inference time with a warm-up, reported as total, mean, p50,
-  p95 and throughput. Model load/`fit` time is reported separately.
-- **Reproducibility.** Same config → same split (the SHA-256 of the test id list is
-  recorded). Pinned model revisions can be set in `config.yaml`.
+- **Split.** Stratified by class and grouped so duplicates cannot cross a boundary:
+  **train / validation / test**. Validation is carved out of the training side, so the
+  test set is unchanged and results stay comparable across runs. The normalizer, in order:
+
+  ```python
+  def normalize(text):
+      value = text
+      value = value.lower()                                  # lowercase
+      value = re.sub(r"https?://\S+|www\.\S+", " ", value)   # URLs removed
+      value = re.sub(r"@\w+", " ", value)                    # @mentions removed
+      value = re.sub(r"^\s*rt\b[:\s]+", "", value, re.I)     # leading "rt" removed
+      value = re.sub(r"[^\w\s]", " ", value)                 # punctuation removed (optional; off by default)
+      value = re.sub(r"\s+", " ", value).strip()             # whitespace collapsed and trimmed
+      return value
+  ```
+
+- **Laya formulations.** Three-class choice, binary choice, `noul` and an
+  explicit-definition prompt, all zero-shot. None is selected using the test set.
+- **HateXplain mapping.** Its `id2label` is read from the model config and mapped onto
+  the canonical labels (`hate speech -> hate speech`, `offensive -> offensive language`,
+  `normal -> neither`). The raw mapping is recorded in the report.
+- **Metrics.** Accuracy, macro F1, per-class precision/recall/F1 and confusion matrices
+  for three-class models; hate-vs-rest precision/recall/F1 with FP/FN counts for all.
+- **Ranking metric.** **PR-AUC (average precision)** for hate vs rest. With ~5.8%
+  positives, ROC-AUC is flattering and accuracy is dominated by the majority class.
+- **Operating point.** The threshold on `P(hate speech)` is **selected on validation**
+  and applied unchanged to test; the test-optimal threshold is recorded only as an
+  upper bound.
+- **Inference.** Where a batched path exists (Laya's `predict_batch`, HateXplain,
+  TF-IDF), predictions come from one batched pass and **single-item latency is measured
+  separately on a sample**, so throughput and latency are never conflated. The two paths
+  are cross-checked and the label agreement is reported (batched shapes can change
+  floating-point results).
+- **Uncertainty.** Percentile **bootstrap 95% CIs** for accuracy, macro F1, hate F1 and
+  PR-AUC. It describes variability, not significance between models (the splits are
+  shared, so the comparison is paired).
+- **Calibration & coverage.** Brier, ECE and reliability bins for the hate score,
+  measured **on validation**; plus a coverage table showing accuracy and hate recall
+  after dropping the least confident answers.
+- **Token budget.** Mean/max state tokens and the number of truncated rows per model.
 
 ---
 
@@ -124,70 +174,99 @@ laya-hate-speech-benchmark/
 ├── requirements.txt
 ├── pyproject.toml
 ├── data/{raw,processed}/     # git-ignored
-├── scripts/run_benchmark.py  # thin wrapper (same entry point)
+├── docs/PRD.md               # the specification this implements
+├── scripts/
+│   ├── run_benchmark.py      # thin wrapper (same entry point)
+│   └── render_report.py      # re-render the report without re-running models
 ├── src/
-│   ├── config.py             # typed config + canonical labels
-│   ├── dataset.py            # download, verify, normalize, grouped split
+│   ├── config.py             # typed config, canonical labels, tasks, training regimes
+│   ├── dataset.py            # download, verify, normalize, grouped 3-way split
 │   ├── environment.py        # hardware/runtime introspection
-│   ├── metrics.py            # classification + latency metrics
+│   ├── metrics.py            # classification, ranking, operating point, bootstrap
+│   ├── calibration.py        # Brier, ECE, reliability bins
 │   ├── evaluation.py         # orchestration
-│   ├── reporting.py          # confusion-matrix plots + Markdown report
+│   ├── reporting.py          # plots + Markdown report
 │   └── models/
-│       ├── base.py           # common interface
+│       ├── base.py           # interface: task, predict_one, predict_batch
 │       ├── majority.py
 │       ├── tfidf.py
-│       ├── laya_model.py     # Laya zero-shot
+│       ├── laya_model.py     # Laya zero-shot: choice/noul, N variants, batching
 │       └── hatexplain.py
 └── results/, report/         # generated, git-ignored
 ```
 
 ### Deviations from the PRD's proposed layout
 
-- `src/models/laya.py` is named `laya_model.py`. A module literally named `laya.py`
-  inside this package risks shadowing the installed `laya` package on import; the
-  renamed file removes that ambiguity. Everything else follows the proposed layout.
+- `src/models/laya.py` is named `laya_model.py`, so it can never shadow the installed
+  `laya` package on import.
 - The dataset is fetched as the authors' original CSV rather than via
-  `huggingface/datasets`, so the downloaded artifact can be hashed directly.
-- Fine-tuning, Detoxify and the phase-2 extensions are **not** implemented: this is
-  the MVP only.
+  `huggingface/datasets`, so it can be hashed directly.
+- The PRD's single `TF-IDF + LR` and single Laya prompt became **variants** (two weight
+  settings; four Laya formulations), because comparing them separates a property of the
+  model from a property of its training prior or its prompt.
+- Fine-tuning and Detoxify are **not** implemented.
 
 ---
 
-## Acceptance criteria
+## Known gaps
 
-| AC | Where it is satisfied |
+| Area | Status |
 | --- | --- |
-| AC1 dataset downloaded + verified | `src/dataset.py`, `results/dataset_metadata.json` |
-| AC2 deterministic split persisted | `src/dataset.py`, `results/split.json` |
-| AC3 Laya runs the full test set | `src/models/laya_model.py` |
-| AC4 TF-IDF + LR predictions | `src/models/tfidf.py` |
-| AC5 HateXplain predictions | `src/models/hatexplain.py` |
-| AC6 all four models, all metrics | `src/metrics.py`, `results/metrics.json` |
-| AC7 hate precision/recall/F1 reported | report section 8 |
-| AC8 confusion matrix per model | `results/confusion_matrix_*.png` |
-| AC9 latency recorded | `results/metrics.json` (`latency`), report section 10 |
-| AC10 all predictions in one file | `results/predictions.csv` |
-| AC11 Markdown report generated | `report/benchmark_report.md` |
-| AC12 reproducible run | fixed seed + recorded test-id SHA-256 |
+| Dataset, grouped split, reproducibility | Done |
+| Three-class metrics, confusion matrices, latency | Done |
+| Hate-vs-rest with PR-AUC, bootstrap CIs | Done |
+| Validation split; thresholds selected there | Done |
+| Batched inference with separate throughput | Done |
+| Binary formulations (choice, `noul`) | Done |
+| Calibration measured (Brier, ECE, reliability) | Done |
+| Temperature fitting / recalibration | **Missing** |
+| Generalization to a second dataset | **Missing** |
+| Qualitative error coding | Mechanical only |
+| Fine-tuning Laya on the train split | **Missing (phase 2)** |
+
+---
+
+## Repository contents, and what is deliberately left out
+
+Tracked: the source, `config.yaml`, both READMEs, `docs/PRD.md`, the license, and a
+small set of **aggregate** results (`results/metrics.json`, `model_comparison.csv`,
+`operating_points.csv`, `coverage.csv`, `report/benchmark_report.md`).
+
+Not tracked, and why:
+
+| Path | Reason |
+| --- | --- |
+| `data/`, `results/predictions.csv`, `results/error_analysis.csv` | contain the **raw tweet text**, which is hate speech. They are regenerated by `python run_benchmark.py` and re-verified by SHA-256. |
+| `.venv/`, `*.png` outputs beyond the report | regenerable |
+| `results/summary.json` | regenerable; used only to re-render the report |
+
+**Representative errors are redacted by default.** The report lists the error
+categories and the example ids, but withholds the tweet text, because the report is
+the artifact most likely to be published. Set
+`output.error_examples_in_report: full` for a local report, and re-render without
+re-running any model:
+
+```bash
+python scripts/render_report.py
+```
 
 ---
 
 ## Publishing to GitHub
 
-The project is self-contained. The virtual environment, the downloaded dataset and
-every generated artifact are git-ignored, so a fresh clone stays small and rebuilds
-them with one command.
+The virtual environment, the downloaded dataset and every generated artifact are
+git-ignored, so a fresh clone stays small and rebuilds them with one command.
 
 ```bash
 git init
 git add .
-git commit -m "feat: local hate speech benchmark comparing Laya with baselines"
+git commit -m "feat: local hate speech benchmark comparing Laya formulations with baselines"
 git branch -M main
 git remote add origin https://github.com/<your-user>/<your-repo>.git
 git push -u origin main
 ```
 
-To publish a specific generated result anyway (for example the report of a real run):
+To publish a specific generated result anyway:
 
 ```bash
 git add -f report/benchmark_report.md results/model_comparison.csv
