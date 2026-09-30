@@ -37,7 +37,7 @@ class LayaClassifier(Classifier):
         self.variant = variant or LayaVariant()
         self.task = self.variant.task
         self.key = self.variant.key
-        self.display_name = "Laya (zero-shot, %s)" % self.variant.label
+        self.display_name = "Laya (%s, %s)" % (self.variant.regime, self.variant.label)
         self.agent = None
         self.question: Dict[str, Any] | None = None
         self.laya_version: str | None = None
@@ -157,10 +157,12 @@ class LayaClassifier(Classifier):
         self._usage = {"rows": 0, "truncated": 0, "sum_state_tokens": 0, "max_state_tokens": 0}
 
     def details(self) -> Dict[str, Any]:
+        checkpoint_cfg = getattr(self.agent, "cfg", None) or {}
         return {
             "variant": self.variant.key,
             "variant_label": self.variant.label,
             "variant_note": self.variant.note,
+            "regime": self.variant.regime,
             "task": self.task,
             "question_type": self.variant.question_type,
             "repo": self.cfg.repo,
@@ -173,6 +175,9 @@ class LayaClassifier(Classifier):
             "batch_size": self.cfg.batch_size,
             "sort_by_length": self.cfg.sort_by_length,
             "questions": self.question,
+            # Present only on a fine-tuned checkpoint; None for the published ones.
+            "fine_tuned": bool(checkpoint_cfg.get("fine_tuned")) or None,
+            "finetune": checkpoint_cfg.get("finetune"),
         }
 
     def unload(self) -> None:

@@ -41,12 +41,19 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="DEBUG: evaluate only the first N test rows (not a benchmark result)",
     )
     parser.add_argument("--list-models", action="store_true", help="print the configured model keys and exit")
+    parser.add_argument(
+        "--include-finetuned",
+        action="store_true",
+        help="also run the phase-2A fine-tuned Laya checkpoint from models.laya_finetuned",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv=None) -> int:
     args = parse_args(argv)
     cfg = load_config(args.config)
+    if args.include_finetuned:
+        cfg.laya_finetuned.enabled = True
     keys = available_model_keys(cfg)
 
     if args.list_models:

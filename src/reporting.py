@@ -584,14 +584,103 @@ def _laya_variants_section(models: Dict[str, Dict[str, Any]]) -> str:
                 ap=_num((entry.get("hate") or {}).get("average_precision"), 3),
             )
         )
-    recalls = [(entry.get("hate") or {}).get("recall") for entry in variants.values()]
+    # The span is over prompt/formulation variants only: a fine-tuned row differs by
+    # training regime, not by prompt, so including it would mislabel what moved.
+    zero_shot = {key: entry for key, entry in variants.items() if key != "laya_finetuned"}
+    recalls = [(entry.get("hate") or {}).get("recall") for entry in zero_shot.values()]
     recalls = [value for value in recalls if value is not None]
-    if len(variants) > 1 and recalls:
+    if len(zero_shot) > 1 and recalls:
         lines.append("")
         lines.append(
-            "_Prompt/formulation sensitivity (measured): across %d Laya variants, hate recall "
-            "spans %.4f to %.4f on the same test rows._" % (len(variants), min(recalls), max(recalls))
+            "_Prompt/formulation sensitivity (measured): across %d zero-shot Laya variants, hate "
+            "recall spans %.4f to %.4f on the same test rows._"
+            % (len(zero_shot), min(recalls), max(recalls))
         )
+    return "\n".join(lines)
+
+
+def _finetuning_section(models: Dict[str, Dict[str, Any]]) -> str:
+    """The phase-2A contrast: zero-shot L1 vs the fine-tuned L1, on the same test rows.
+
+    Returns "" when the run has no fine-tuned checkpoint, so the zero-shot-only report is
+    unchanged.
+    """
+    finetuned = models.get("laya_finetuned")
+    if not finetuned:
+        return ""
+
+    def row(key: str, entry: Dict[str, Any]) -> str:
+        hate = entry.get("hate") or {}
+        return "| {m} | {acc} | {f1} | {hp} | {hr} | {hf} |".format(
+            m=key,
+            acc=_pct(entry.get("accuracy")),
+            f1=_num(entry.get("macro_f1")),
+            hp=_num(hate.get("precision")),
+            hr=_num(hate.get("recall")),
+            hf=_num(hate.get("f1")),
+        )
+
+    lines = [
+        "### Training regime: zero-shot vs supervised fine-tuned",
+        "",
+        "**Prediction registered before the run (PRD section 24).** The reference experiment on "
+        "this dataset reported Laya fine-tuned at 82.75% accuracy with hate recall falling from "
+        "77.97% to 41.43%. L1 zero-shot here is accuracy-oriented *in the other direction*: it "
+        "trades precision for recall. So if the reference reproduces, fine-tuning should **raise "
+        "accuracy and macro F1 and lower hate recall** relative to L1 zero-shot, and report it "
+        "as such whichever way it comes out.",
+        "",
+    ]
+    rows = []
+    if "laya" in models:
+        rows.append(row("laya (zero-shot, L1)", models["laya"]))
+    details = finetuned.get("details") or {}
+    finetune = details.get("finetune") or {}
+    rows.append(row("laya_finetuned", finetuned))
+    lines.append("| Model | Accuracy | Macro F1 | Hate Precision | Hate Recall | Hate F1 |")
+    lines.append("| --- | ---: | ---: | ---: | ---: | ---: |")
+    lines.extend(rows)
+
+    if "laya" in models:
+        base = models["laya"]
+        deltas = []
+        for name, getter in (
+            ("accuracy", lambda e: e.get("accuracy")),
+            ("macro F1", lambda e: e.get("macro_f1")),
+            ("hate precision", lambda e: (e.get("hate") or {}).get("precision")),
+            ("hate recall", lambda e: (e.get("hate") or {}).get("recall")),
+        ):
+            before, after = getter(base), getter(finetuned)
+            if before is not None and after is not None:
+                deltas.append("%s %+.4f" % (name, float(after) - float(before)))
+        if deltas:
+            lines.append("")
+            lines.append("_Measured change, fine-tuned minus zero-shot: %s._" % ", ".join(deltas))
+    if finetune:
+        lines.append("")
+        lines.append(
+            "_Protocol: RLCD on the Davidson train split only (%s items, %s epochs, %s optimizer "
+            "steps, micro-batch %s x grad-accum %s, seed %s); one-hot gold targets because Davidson "
+            "has hard labels; temperatures fitted on the validation split by the same code path as "
+            "the zero-shot variants; test rows never seen. The checkpoint is a local artifact, not a "
+            "published model._"
+            % (
+                finetune.get("train_items", "?"),
+                finetune.get("epochs", "?"),
+                finetune.get("optimizer_steps", "?"),
+                finetune.get("micro_batch", "?"),
+                finetune.get("grad_accum", "?"),
+                finetune.get("seed", "?"),
+            )
+        )
+        history = finetune.get("eval_history") or []
+        if history:
+            lines.append("")
+            lines.append("Validation trajectory (accuracy / hate recall): " + "; ".join(
+                "epoch %s %.3f / %s" % (
+                    entry.get("epoch"), float(entry.get("accuracy", 0.0)),
+                    "n/a" if entry.get("hate_recall") is None else "%.3f" % entry["hate_recall"],
+                ) for entry in history))
     return "\n".join(lines)
 
 
@@ -922,15 +1011,30 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
     # 12. Laya analysis
     lines.append("## 12. Laya Analysis")
     lines.append("")
-    lines.append(
-        "Laya was run **zero-shot**; no fine-tuning was performed (PRD section 24 defers it to "
-        "phase 2). Because a zero-shot model's answer depends on the prompt *and* on the question "
-        "type, several formulations are compared — three-class choice, binary choice, noul, and an "
-        "explicit-definition prompt:"
-    )
+    has_finetuned = "laya_finetuned" in models
+    if has_finetuned:
+        lines.append(
+            "Two Laya **training regimes** are reported and never pooled: the published "
+            "**zero-shot** checkpoints, and a **supervised fine-tuned** checkpoint trained here on "
+            "the Davidson train split (`laya_finetuned`). The regime column in section 5 is the "
+            "authoritative statement of which is which. Because a zero-shot model's answer depends "
+            "on the prompt *and* on the question type, several zero-shot formulations are also "
+            "compared — three-class choice, binary choice, noul, and an explicit-definition prompt:"
+        )
+    else:
+        lines.append(
+            "Laya was run **zero-shot**; no fine-tuning was performed (PRD section 24 defers it to "
+            "phase 2). Because a zero-shot model's answer depends on the prompt *and* on the question "
+            "type, several formulations are compared — three-class choice, binary choice, noul, and an "
+            "explicit-definition prompt:"
+        )
     lines.append("")
     lines.append(_laya_variants_section(models))
     lines.append("")
+    finetuning = _finetuning_section(models)
+    if finetuning:
+        lines.append(finetuning)
+        lines.append("")
     lines.append(
         "_No variant was selected using the test set: all formulations are reported, and thresholds "
         "come from validation. Choosing a single formulation for production is a separate decision "
@@ -947,13 +1051,26 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
         "generalization; a second hate-speech dataset is required."
     )
     lines.append(
-        "- **Calibration is measured, not fitted.** Brier and ECE are reported for the shipped "
-        "checkpoints; no temperature scaling was applied, so the confidence numbers are descriptive "
-        "and should not be read as 'about c of answers at c are correct'."
+        "- **Calibration is fitted on validation, so its numbers are conditional.** Laya's "
+        "temperature map and the monotone hate-score maps (Platt, isotonic) are fitted on the "
+        "validation split and measured on test (see the recalibration tables). They are monotone, so "
+        "they cannot change a prediction; isotonic can still coarsen the ranking into ties, which is "
+        "why PR-AUC is reported before and after. A calibrated probability is not detection "
+        "performance, and these numbers do not transfer to a checkpoint or option count they were "
+        "not fitted for."
     )
-    lines.append(
-        "- **No fine-tuning.** Laya's zero-shot numbers are a starting point, not its ceiling."
-    )
+    if "laya_finetuned" in models:
+        lines.append(
+            "- **One fine-tuning configuration only.** `laya_finetuned` is a single RLCD run on the "
+            "L1 question, with one seed and one effective batch. It establishes the direction of the "
+            "zero-shot / fine-tuned contrast on this split; it is not an optimum, and no "
+            "hyperparameter was selected on the test set. Gold targets are one-hot because Davidson "
+            "ships hard labels, whereas the reference notebook trains on teacher soft probabilities."
+        )
+    else:
+        lines.append(
+            "- **No fine-tuning.** Laya's zero-shot numbers are a starting point, not its ceiling."
+        )
     lines.append(
         "- Models have different label taxonomies: HateXplain's own three classes are mapped onto "
         "Davidson's, which introduces a mapping assumption the report cannot remove."
@@ -983,10 +1100,10 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
     lines.append("| Batched inference with separate throughput | Done |")
     lines.append("| Binary formulations (choice, noul) | Done |")
     lines.append("| Calibration measured (Brier, ECE, reliability) | Done |")
-    lines.append("| Temperature fitting / recalibration | **Missing** |")
+    lines.append("| Temperature fitting / recalibration | Done (fitted on validation; see section 9) |")
     lines.append("| Generalization to a second dataset | **Missing** |")
     lines.append("| Qualitative error coding | Mechanical only (see section 11) |")
-    lines.append("| Fine-tuning Laya on the train split | **Missing (phase 2)** |")
+    lines.append("| Fine-tuning Laya on the train split | Done (phase 2A) when run with `--include-finetuned` |")
     lines.append("")
 
     # 14. Conclusions
@@ -1019,12 +1136,24 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
             )
         )
         lines.append("")
-        lines.append(
-            "For Laya specifically, the interesting question is not whether it beats a supervised "
-            "baseline, but **which formulation** gives the best recall/precision/cost trade-off — "
-            "section 12 measures that, and section 8 shows how much the decision rule alone changes "
-            "the answer."
-        )
+        if "laya_finetuned" in models:
+            lines.append(
+                "For Laya specifically, two axes are measured and must not be conflated: **which "
+                "formulation** is asked (three-class choice, binary choice, `noul`, explicit "
+                "definitions) and **which training regime** answers it (zero-shot vs supervised "
+                "fine-tuned). Section 12 separates them: the zero-shot formulations span a wide "
+                "recall/precision range at similar cost, and `laya_finetuned` moves the L1 question "
+                "sharply toward precision — leading macro F1 among three-class models while giving up "
+                "roughly a third of L1's hate recall. Those are different experimental conditions, "
+                "not competing prompts."
+            )
+        else:
+            lines.append(
+                "For Laya specifically, the interesting question is not whether it beats a supervised "
+                "baseline, but **which formulation** gives the best recall/precision/cost trade-off — "
+                "section 12 measures that, and section 8 shows how much the decision rule alone changes "
+                "the answer."
+            )
     else:
         lines.append("No comparison was available to interpret.")
     lines.append("")

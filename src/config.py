@@ -42,6 +42,9 @@ TRAINING_REGIME: Dict[str, Dict[str, Any]] = {
                        "note": "Same pipeline with class_weight='balanced'."},
     "laya": {"regime": "Zero-shot", "trained_on_davidson": False,
              "note": "Published checkpoint, hand-written question, no fine-tuning."},
+    "laya_finetuned": {"regime": "Supervised fine-tuned (RLCD, fit here)", "trained_on_davidson": True,
+                       "note": "Same L1 question, fine-tuned on the Davidson train split with RLCD "
+                               "(scripts/finetune_laya.py); test rows never seen."},
     "hatexplain": {"regime": "Pretrained externally", "trained_on_davidson": False,
                    "note": "HateXplain BERT, trained on the HateXplain dataset, labels remapped."},
 }
@@ -115,6 +118,9 @@ class LayaVariant:
     instructions: str = "Classify the language of this message."
     criteria: Dict[str, str] = field(default_factory=dict)
     note: str = ""
+    # Reported verbatim: "zero-shot" and "fine-tuned" are different experimental
+    # conditions and the report must never let a reader confuse the two.
+    regime: str = "zero-shot"
 
 
 @dataclass
@@ -130,6 +136,28 @@ class LayaConfig:
     batch_size: int = 64
     sort_by_length: bool = True
     variants: List[LayaVariant] = field(default_factory=lambda: [LayaVariant()])
+
+
+@dataclass
+class LayaFinetunedConfig:
+    """A Laya checkpoint produced by ``scripts/finetune_laya.py`` (phase 2A).
+
+    Disabled by default: the checkpoint is a derived local artifact of ~0.8 GB, so a
+    fresh clone must be able to run the zero-shot benchmark without it. Enable it with
+    ``run_benchmark.py --include-finetuned`` once the fine-tune has been run.
+    """
+
+    enabled: bool = False
+    # Directory holding model.safetensors, encoder/, tokenizer/, rl_agent_config.json.
+    checkpoint: str = "artifacts/laya-finetuned-l1"
+    # Zero-shot variant key whose question wording the fine-tune was trained on. The
+    # fine-tuned row must answer the *same* question to be comparable.
+    source_variant: str = "laya"
+    variant_label: str = "L1 3-class choice (PRD wording)"
+    device: Optional[str] = None
+    max_len: int = 512
+    batch_size: int = 64
+    sort_by_length: bool = True
 
 
 @dataclass
@@ -192,6 +220,7 @@ class Config:
     majority: MajorityConfig = field(default_factory=MajorityConfig)
     tfidf: TfidfConfig = field(default_factory=TfidfConfig)
     laya: LayaConfig = field(default_factory=LayaConfig)
+    laya_finetuned: LayaFinetunedConfig = field(default_factory=LayaFinetunedConfig)
     hatexplain: HateXplainConfig = field(default_factory=HateXplainConfig)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
     stats: StatsConfig = field(default_factory=StatsConfig)
@@ -252,6 +281,7 @@ def load_config(path: Optional[str] = None) -> Config:
         majority=_from(MajorityConfig, models.get("majority")),
         tfidf=_from(TfidfConfig, tfidf_raw),
         laya=_from(LayaConfig, laya_raw),
+        laya_finetuned=_from(LayaFinetunedConfig, models.get("laya_finetuned")),
         hatexplain=_from(HateXplainConfig, models.get("hatexplain")),
         inference=_from(InferenceConfig, raw.get("inference")),
         stats=_from(StatsConfig, raw.get("stats")),

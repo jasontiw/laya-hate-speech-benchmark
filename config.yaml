@@ -120,6 +120,24 @@ models:
         question_type: noul
         instructions: Is this text hate speech?
 
+  # Phase 2A — Laya fine-tuned on the Davidson train split (RLCD).
+  # Disabled by default: the checkpoint is a ~0.8 GB local artifact produced by
+  #   python scripts/build_laya_finetune_data.py
+  #   python scripts/finetune_laya.py --data data/processed/laya_finetune_train.jsonl
+  # so a fresh clone still reproduces the zero-shot benchmark with one command.
+  # Run with `python run_benchmark.py --include-finetuned` to add the row.
+  laya_finetuned:
+    enabled: false
+    # Directory holding model.safetensors, encoder/, tokenizer/, rl_agent_config.json.
+    checkpoint: artifacts/laya-finetuned-l1
+    # The zero-shot variant whose exact question wording the fine-tune was trained on.
+    source_variant: laya
+    variant_label: L1 3-class choice (PRD wording)
+    device: null
+    max_len: 512
+    batch_size: 64
+    sort_by_length: true
+
   hatexplain:
     enabled: true
     model_id: Hate-speech-CNERG/bert-base-uncased-hatexplain
