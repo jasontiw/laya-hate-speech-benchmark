@@ -30,6 +30,8 @@ NOT_HATE = "not hate speech"
 
 
 class LayaClassifier(Classifier):
+    supports_calibration = True
+
     def __init__(self, cfg: LayaConfig, variant: Optional[LayaVariant] = None) -> None:
         self.cfg = cfg
         self.variant = variant or LayaVariant()
@@ -126,6 +128,19 @@ class LayaClassifier(Classifier):
 
     def supports_probabilities(self) -> bool:
         return True
+
+    def fit_calibration(self, states: List[Any], gold_labels: List[str], seed: int = 42) -> Optional[Dict[str, Any]]:
+        """Fit Laya's temperature map from labeled validation forwards (installs it too)."""
+        if self.agent is None or self.question is None:
+            raise RuntimeError("laya classifier used before load()")
+        from ..laya_calibration import build_pairs, fit as fit_temperatures
+
+        pairs = build_pairs(states, gold_labels, self.question, self.variant.question_type, self.variant.criteria)
+        return fit_temperatures(self.agent, pairs, seed=seed)
+
+    def save_calibration(self, path) -> None:
+        if self.agent is not None:
+            self.agent.save_calibration(str(path))
 
     def token_stats(self) -> Dict[str, Any]:
         rows = max(1, self._usage["rows"])

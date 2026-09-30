@@ -19,9 +19,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
 from . import reporting
-from .calibration import calibration_report
+from .calibration import brier_score, calibration_report, reliability_bins
 from .config import (
     CANONICAL_LABELS,
+    HATE_LABEL,
     PROBABILITY_SLUG,
     PROJECT_ROOT,
     TASK_HATE_BINARY,
@@ -107,6 +108,16 @@ def _plain_predict(classifier, texts: List[str]) -> Tuple[List[str], Optional[Li
 def _token_stats(classifier) -> Optional[Dict[str, Any]]:
     stats_fn = getattr(classifier, "token_stats", None)
     return stats_fn() if callable(stats_fn) else None
+
+
+def _calibration_numbers(gold, scores, bins: int) -> Optional[Dict[str, Any]]:
+    """Brier and ECE of the hate score, for the before/after recalibration comparison."""
+    if scores is None:
+        return None
+    return {
+        "brier": brier_score(gold, scores, HATE_LABEL),
+        "ece": (reliability_bins(gold, scores, HATE_LABEL, bins=bins) or {}).get("ece"),
+    }
 
 
 def _run_model(
@@ -196,6 +207,31 @@ def _run_model(
                 % (key, len(sample_labels), batch_info["single_sample_label_match"])
             )
 
+    # Post-hoc calibration: fit on validation, then re-predict the test set. Temperature
+    # scaling is monotone, so no predicted label may change; that invariant is checked
+    # rather than assumed.
+    calibration_fit = None
+    calibrated_labels = None
+    calibrated_probabilities = None
+    if (cfg.calibration.enabled and cfg.calibration.fit_temperatures
+            and getattr(classifier, "supports_calibration", False)):
+        log("model [%s]: fitting calibration on %d validation rows ..." % (key, len(validation_texts)))
+        calibration_fit = classifier.fit_calibration(
+            validation_texts, validation_df["gold_label"].tolist(), seed=cfg.calibration.seed
+        )
+        if calibration_fit:
+            save_fn = getattr(classifier, "save_calibration", None)
+            if callable(save_fn):
+                save_fn(cfg.results_dir / ("calibration_%s.json" % key))
+            recalibrated = classifier.predict_batch(test_texts)
+            if recalibrated is not None:
+                calibrated_labels = [row[0] for row in recalibrated]
+                calibrated_probabilities = [row[1] for row in recalibrated]
+                changed = sum(1 for a, b in zip(labels, calibrated_labels) if a != b)
+                calibration_fit["labels_changed"] = changed
+                log("model [%s]: recalibrated (T=%s), %d/%d labels changed (expected 0)"
+                    % (key, calibration_fit.get("temperature"), changed, len(labels)))
+
     result = ModelResult(
         key=key,
         name=classifier.display_name,
@@ -208,6 +244,9 @@ def _run_model(
         revision=str(getattr(classifier, "revision", None)) if getattr(classifier, "revision", None) else None,
         batch=batch_info,
         token_stats=token_stats,
+        calibrated_labels=calibrated_labels,
+        calibrated_probabilities=calibrated_probabilities,
+        calibration_fit=calibration_fit,
         details=classifier.details(),
     )
     unload = getattr(classifier, "unload", None)
@@ -383,6 +422,7 @@ def run_benchmark(
     metrics_by_model: Dict[str, Dict[str, Any]] = {}
     calibration_by_model: Dict[str, Any] = {}
     coverage_by_model: Dict[str, Any] = {}
+    recalibration_by_model: Dict[str, Any] = {}
 
     for key, result in results.items():
         task = result.task
@@ -427,6 +467,22 @@ def run_benchmark(
                     validation_gold, validation_scores, bins=cfg.calibration.bins
                 )
 
+        # Temperature fitting: fitted on validation, measured on test, labels unchanged.
+        if result.calibrated_probabilities is not None:
+            after_scores = hate_score_array(result.calibrated_probabilities)
+            fit = result.calibration_fit or {}
+            entry["recalibration"] = {
+                "fitted_on": "validation",
+                "fitted_rows": int(len(validation_df)),
+                "temperature": fit.get("temperature"),
+                "temperature_by_options": fit.get("temperature_by_options"),
+                "fit_report": fit.get("report"),
+                "labels_changed": fit.get("labels_changed"),
+                "test_before": _calibration_numbers(gold, scores, cfg.calibration.bins),
+                "test_after": _calibration_numbers(gold, after_scores, cfg.calibration.bins),
+            }
+            recalibration_by_model[key] = entry["recalibration"]
+
         confidence_column = f"{key}_confidence"
         if confidence_column in predictions.columns and predictions[confidence_column].notna().any():
             confidences = predictions[confidence_column].tolist()
@@ -449,6 +505,7 @@ def run_benchmark(
         "comparison": comparison_rows,
         "calibration": calibration_by_model,
         "coverage": coverage_by_model,
+        "recalibration": recalibration_by_model,
     })
     log("artifacts: metrics.json, model_comparison.csv")
 
@@ -530,6 +587,7 @@ def run_benchmark(
         "comparison": comparison_rows,
         "calibration": calibration_by_model,
         "coverage": coverage_by_model,
+        "recalibration": recalibration_by_model,
         "training_regime": {key: entry["training_regime"] for key, entry in metrics_by_model.items()},
         "debug_limit": limit,
         "test_rows_used": int(len(test_df)),

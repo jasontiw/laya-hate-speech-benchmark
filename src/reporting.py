@@ -338,6 +338,52 @@ def _token_table(models: Dict[str, Dict[str, Any]]) -> str:
     return "\n".join(lines) if any_stats else "_No model reported token statistics._"
 
 
+def _recalibration_table(recalibration: Dict[str, Any]) -> str:
+    if not recalibration:
+        return "_Temperature fitting was not run, or no model supported it._"
+    lines = [
+        "| Model | Fitted temperature | Answer-confidence ECE (validation, held out) | Hate-score ECE (test) | Brier (test) | Labels changed |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for key, report in recalibration.items():
+        fit_report = report.get("fit_report") or {}
+        before = report.get("test_before") or {}
+        after = report.get("test_after") or {}
+        temperature = report.get("temperature")
+        if isinstance(temperature, (list, tuple)):
+            temperature = ", ".join("%.2f" % float(t) for t in temperature)
+        lines.append(
+            "| %s | %s | %s → %s | %s → %s | %s → %s | %s |"
+            % (key, temperature,
+               _num(fit_report.get("ece_before")), _num(fit_report.get("ece_after")),
+               _num(before.get("ece")), _num(after.get("ece")),
+               _num(before.get("brier")), _num(after.get("brier")),
+               report.get("labels_changed"))
+        )
+    lines.append("")
+    lines.append("The two ECE columns measure **different things, and they disagree**:")
+    lines.append("")
+    lines.append(
+        "- **Answer-confidence ECE** is the fitter's own held-out metric on validation: it asks "
+        "whether the label Laya *chose* is right as often as its reported confidence claims."
+    )
+    lines.append(
+        "- **Hate-score ECE** is this benchmark's metric on the **test** split: it asks whether "
+        "`P(hate speech)` matches the actual hate rate among the tweets that received it."
+    )
+    lines.append("")
+    lines.append(
+        "_Measured result. Fitting Laya's temperature map fixes the first and barely moves the "
+        "second. A per-question-type temperature calibrates the confidence of the answer Laya "
+        "picked; it does not calibrate the probability of a particular class, which is what a "
+        "detector needs. Temperature scaling is monotone, so 'labels changed' is 0 by "
+        "construction and the classification metrics are untouched. The fitted maps are saved as "
+        "`results/calibration_<model>.json` and load with "
+        "`laya.load(repo, calibration=path)`._"
+    )
+    return "\n".join(lines)
+
+
 def _coverage_table(coverage: Dict[str, Any], models: Dict[str, Dict[str, Any]]) -> str:
     if not coverage:
         return "_No model exposed a confidence, so coverage was not analysed._"
@@ -782,6 +828,11 @@ def generate_report(summary: Dict[str, Any], cfg: Config) -> Path:
     lines.append(_quadrant_table(models))
     lines.append("")
     lines.append(_calibration_table(calibration))
+    lines.append("")
+    lines.append("**Temperature fitting.** Laya's shipped checkpoints are over-confident; this "
+                 "refits its temperature map on the validation split and re-measures on test.")
+    lines.append("")
+    lines.append(_recalibration_table(summary.get("recalibration") or {}))
     lines.append("")
     lines.append("**Abstention / coverage.** Dropping the least confident answers:")
     lines.append("")

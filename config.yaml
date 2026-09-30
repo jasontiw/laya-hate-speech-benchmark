@@ -147,6 +147,11 @@ calibration:
   # Measured on the validation split. Lower Brier and ECE are better.
   enabled: true
   bins: 10
+  # Fit Laya's own temperature map on validation and re-measure on test. Temperature
+  # scaling is monotone, so predicted labels cannot change - only the probabilities.
+  # Needs the full validation split (the fitter's per-bucket floor is 2000 records).
+  fit_temperatures: true
+  seed: 42
 
 output:
   results_dir: results

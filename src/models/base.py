@@ -39,6 +39,9 @@ class ModelResult:
     revision: Optional[str] = None
     batch: Optional[Dict[str, Any]] = None
     token_stats: Optional[Dict[str, Any]] = None
+    calibrated_labels: Optional[List[str]] = None
+    calibrated_probabilities: Optional[List[Optional[Dict[str, float]]]] = None
+    calibration_fit: Optional[Dict[str, Any]] = None
     details: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -48,6 +51,8 @@ class Classifier(ABC):
     key: str = "classifier"
     display_name: str = "classifier"
     task: str = TASK_THREE_CLASS
+    # True only for models that can fit a post-hoc calibration map.
+    supports_calibration: bool = False
 
     def load(self, train_df: pd.DataFrame) -> None:
         """Fit on the training split or load pretrained weights. Called once."""
@@ -63,6 +68,14 @@ class Classifier(ABC):
         Returns None when the model has no batched path, so the caller falls back to
         looping :meth:`predict_one` without special-casing the model.
         """
+        return None
+
+    def fit_calibration(self, states: List[Any], gold_labels: List[str], seed: int = 42) -> Optional[Dict[str, Any]]:
+        """Fit a post-hoc calibration map from labeled data. None when unsupported."""
+        return None
+
+    def save_calibration(self, path) -> None:
+        """Persist a fitted calibration map, when the model has one."""
         return None
 
     def supports_probabilities(self) -> bool:

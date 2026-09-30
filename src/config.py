@@ -162,6 +162,11 @@ class StatsConfig:
 class CalibrationConfig:
     enabled: bool = True
     bins: int = 10
+    # Fit Laya's own temperature map on the validation split. The shipped checkpoints are
+    # over-confident, and temperature scaling cannot change a predicted label, only the
+    # probabilities. See src/laya_calibration.py.
+    fit_temperatures: bool = True
+    seed: int = 42
 
 
 @dataclass
