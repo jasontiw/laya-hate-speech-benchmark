@@ -219,10 +219,31 @@ laya-hate-speech-benchmark/
 | Batched inference with separate throughput | Done |
 | Binary formulations (choice, `noul`) | Done |
 | Calibration measured (Brier, ECE, reliability) | Done |
-| Temperature fitting / recalibration | **Missing** |
+| Temperature fitting / recalibration | Done (`results/calibration_<model>.json`) |
 | Generalization to a second dataset | **Missing** |
 | Qualitative error coding | Mechanical only |
 | Fine-tuning Laya on the train split | **Missing (phase 2)** |
+
+### Upstream issue found by this benchmark
+
+`laya.calibrate.records_from_labeled` calls `agent._forward()` directly, but only
+`predict` / `predict_batch` carry `@torch.no_grad()`. On a checkpoint whose parameters
+require grad, building calibration records therefore fails with
+`RuntimeError: Can't call numpy() on Tensor that requires grad` (laya 0.3.22).
+`src/laya_calibration.py` wraps the call in `torch.no_grad()` as a behaviour-preserving
+workaround; the fix belongs upstream.
+
+### Recalibration
+
+Laya's published checkpoints are over-confident, so the pipeline refits its
+**temperature map** on the validation split, saves it as
+`results/calibration_<model>.json`, and re-measures Brier and ECE on test. Temperature
+scaling is monotone, so it cannot change a predicted label — the report asserts that
+("labels changed" must be 0) instead of assuming it. Load the fitted map with:
+
+```python
+agent = laya.load("convaiinnovations/laya", calibration="results/calibration_laya.json")
+```
 
 ---
 

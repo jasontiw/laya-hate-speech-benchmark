@@ -220,10 +220,32 @@ laya-hate-speech-benchmark/
 | Inferencia batcheada con throughput separado | Hecho |
 | Formulaciones binarias (choice, `noul`) | Hecho |
 | Calibración medida (Brier, ECE, fiabilidad) | Hecho |
-| Ajuste de temperaturas / recalibración | **Falta** |
+| Ajuste de temperaturas / recalibración | Hecho (`results/calibration_<model>.json`) |
 | Generalización a un segundo dataset | **Falta** |
 | Codificación cualitativa de errores | Solo mecánica |
 | Fine-tuning de Laya con el train | **Falta (fase 2)** |
+
+### Bug de upstream encontrado por este benchmark
+
+`laya.calibrate.records_from_labeled` llama a `agent._forward()` directamente, pero solo
+`predict` / `predict_batch` llevan `@torch.no_grad()`. En un checkpoint cuyos parámetros
+requieren gradiente, construir los records de calibración falla con
+`RuntimeError: Can't call numpy() on Tensor that requires grad` (laya 0.3.22).
+`src/laya_calibration.py` envuelve la llamada en `torch.no_grad()` como workaround que
+no altera el comportamiento; el arreglo corresponde a upstream.
+
+### Recalibración
+
+Los checkpoints publicados de Laya salen sobre-confiados, así que el pipeline reajusta su
+**mapa de temperaturas** sobre el split de validación, lo guarda como
+`results/calibration_<model>.json` y vuelve a medir Brier y ECE en test. El escalado por
+temperatura es monótono, así que no puede cambiar una etiqueta predicha — el reporte lo
+**verifica** (la columna "labels changed" debe ser 0) en vez de asumirlo. Carga el mapa
+ajustado con:
+
+```python
+agent = laya.load("convaiinnovations/laya", calibration="results/calibration_laya.json")
+```
 
 ---
 

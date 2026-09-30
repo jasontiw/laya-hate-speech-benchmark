@@ -65,14 +65,14 @@
       "latency": {
         "count": 4933,
         "total_s": 0.001,
-        "average_ms": 0.00012933304340556148,
+        "average_ms": 0.0001309344871337802,
         "p50_ms": 0.000100000761449337,
         "p95_ms": 0.000200001522898674,
         "min_ms": 9.999348549172282e-05,
-        "max_ms": 0.006199996278155595,
+        "max_ms": 0.000600004568696022,
         "throughput_per_s": null
       },
-      "load_time_s": 0.002,
+      "load_time_s": 0.001,
       "display_name": "Majority baseline",
       "device": null,
       "revision": null,
@@ -181,15 +181,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 0.224,
-        "average_ms": 0.4481284002686152,
-        "p50_ms": 0.44285000331001356,
-        "p95_ms": 0.4745100039144745,
-        "min_ms": 0.4135999988648109,
-        "max_ms": 1.0810000021592714,
-        "throughput_per_s": 2231.5032910223595
+        "total_s": 0.233,
+        "average_ms": 0.4666481999011012,
+        "p50_ms": 0.460150000435533,
+        "p95_ms": 0.505394998617703,
+        "min_ms": 0.4262000002199784,
+        "max_ms": 1.2310999954934232,
+        "throughput_per_s": 2142.9419425853016
       },
-      "load_time_s": 1.109,
+      "load_time_s": 1.042,
       "display_name": "TF-IDF + Logistic Regression",
       "device": null,
       "revision": null,
@@ -216,8 +216,8 @@
         "used": true,
         "n": 4933,
         "batch_size": null,
-        "total_s": 0.0691960999974981,
-        "throughput_per_s": 71290.144967395,
+        "total_s": 0.07252700000390178,
+        "throughput_per_s": 68016.04919181293,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -350,15 +350,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 0.225,
-        "average_ms": 0.4494575999851804,
-        "p50_ms": 0.4429500004334841,
-        "p95_ms": 0.48900499859882984,
-        "min_ms": 0.40750000334810466,
-        "max_ms": 1.0407000008854084,
-        "throughput_per_s": 2224.903973217879
+        "total_s": 0.252,
+        "average_ms": 0.504482399817789,
+        "p50_ms": 0.4585999995470047,
+        "p95_ms": 0.7510799998271976,
+        "min_ms": 0.42600000597303733,
+        "max_ms": 1.0717000041040592,
+        "throughput_per_s": 1982.2297078375461
       },
-      "load_time_s": 1.009,
+      "load_time_s": 1.008,
       "display_name": "TF-IDF + Logistic Regression (class_weight=balanced)",
       "device": null,
       "revision": null,
@@ -385,8 +385,8 @@
         "used": true,
         "n": 4933,
         "batch_size": null,
-        "total_s": 0.07385170000634389,
-        "throughput_per_s": 66796.02500113407,
+        "total_s": 0.07279330000164919,
+        "throughput_per_s": 67767.2258283144,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -519,15 +519,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 19.356,
-        "average_ms": 38.71248860016931,
-        "p50_ms": 37.74100000009639,
-        "p95_ms": 48.50710499886186,
-        "min_ms": 32.10160000162432,
-        "max_ms": 59.37619999895105,
-        "throughput_per_s": 25.831457396816038
+        "total_s": 18.078,
+        "average_ms": 36.15519159968244,
+        "p50_ms": 36.00240000378108,
+        "p95_ms": 38.05372500355588,
+        "min_ms": 33.69160000147531,
+        "max_ms": 47.578099998645484,
+        "throughput_per_s": 27.658545170281528
       },
-      "load_time_s": 3.664,
+      "load_time_s": 4.063,
       "display_name": "Laya (zero-shot, L1 3-class choice (PRD wording))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -567,8 +567,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 19.319729599999846,
-        "throughput_per_s": 255.3348365703855,
+        "total_s": 21.235650499998883,
+        "throughput_per_s": 232.2980405050582,
         "single_sample_n": 500,
         "single_sample_label_match": 0.994
       },
@@ -602,6 +602,34 @@
         "hate_tp": 117,
         "hate_fp": 269,
         "hate_fn": 167
+      },
+      "recalibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "temperature": [
+          1.2465780973434448,
+          1.0,
+          1.0
+        ],
+        "temperature_by_options": {
+          "choice:3-5": 1.2465780973434448
+        },
+        "fit_report": {
+          "ece_before": 0.12334815858078065,
+          "ece_after": 0.13686087563175076,
+          "n": 3720.0,
+          "n_eval": 744.0,
+          "buckets_excluded_from_eval": []
+        },
+        "labels_changed": 0,
+        "test_before": {
+          "brier": 0.11473980129941214,
+          "ece": 0.23072963713764444
+        },
+        "test_after": {
+          "brier": 0.12130258420839247,
+          "ece": 0.21645680113521182
+        }
       },
       "confidence": {
         "high_confidence": 0.5,
@@ -707,15 +735,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 19.095,
-        "average_ms": 38.19089439991512,
-        "p50_ms": 37.24759999749949,
-        "p95_ms": 44.373489999634316,
-        "min_ms": 34.54210000199964,
-        "max_ms": 55.32430000312161,
-        "throughput_per_s": 26.18425191954191
+        "total_s": 18.434,
+        "average_ms": 36.86787580016244,
+        "p50_ms": 36.47194999939529,
+        "p95_ms": 40.18875999718148,
+        "min_ms": 34.387100000458304,
+        "max_ms": 48.48369999672286,
+        "throughput_per_s": 27.123884365358368
       },
-      "load_time_s": 1.245,
+      "load_time_s": 1.195,
       "display_name": "Laya (zero-shot, L4 3-class choice (explicit definitions))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -755,8 +783,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 23.508863699993526,
-        "throughput_per_s": 209.83574803750972,
+        "total_s": 24.709344700000656,
+        "throughput_per_s": 199.6410693967076,
         "single_sample_n": 500,
         "single_sample_label_match": 0.99
       },
@@ -790,6 +818,34 @@
         "hate_tp": 107,
         "hate_fp": 230,
         "hate_fn": 177
+      },
+      "recalibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "temperature": [
+          3.090766191482544,
+          1.0,
+          1.0
+        ],
+        "temperature_by_options": {
+          "choice:3-5": 3.090766191482544
+        },
+        "fit_report": {
+          "ece_before": 0.269200013073841,
+          "ece_after": 0.12038435996577547,
+          "n": 3720.0,
+          "n_eval": 744.0,
+          "buckets_excluded_from_eval": []
+        },
+        "labels_changed": 0,
+        "test_before": {
+          "brier": 0.10724186022704238,
+          "ece": 0.2117685789580377
+        },
+        "test_after": {
+          "brier": 0.10552790143320495,
+          "ece": 0.23267502533954998
+        }
       },
       "confidence": {
         "high_confidence": 0.5,
@@ -864,15 +920,15 @@
       "task": "hate_binary",
       "latency": {
         "count": 500,
-        "total_s": 19.513,
-        "average_ms": 39.02666980033973,
-        "p50_ms": 37.91455000464339,
-        "p95_ms": 48.02038500274647,
-        "min_ms": 34.11400000186404,
-        "max_ms": 58.5374000002048,
-        "throughput_per_s": 25.623503238067595
+        "total_s": 17.017,
+        "average_ms": 34.034674199996516,
+        "p50_ms": 33.83830000166199,
+        "p95_ms": 36.17872500180965,
+        "min_ms": 31.00070000073174,
+        "max_ms": 48.577200002910104,
+        "throughput_per_s": 29.3818002817874
       },
-      "load_time_s": 1.056,
+      "load_time_s": 0.963,
       "display_name": "Laya (zero-shot, L2 2-class choice (hate / not hate))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -911,8 +967,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 17.85390760000155,
-        "throughput_per_s": 276.2980581348798,
+        "total_s": 18.328611800003273,
+        "throughput_per_s": 269.1420416247301,
         "single_sample_n": 500,
         "single_sample_label_match": 0.998
       },
@@ -946,6 +1002,34 @@
         "hate_tp": 116,
         "hate_fp": 272,
         "hate_fn": 168
+      },
+      "recalibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "temperature": [
+          1.855133295059204,
+          1.0,
+          1.0
+        ],
+        "temperature_by_options": {
+          "choice:2": 1.855133295059204
+        },
+        "fit_report": {
+          "ece_before": 0.08937399463786838,
+          "ece_after": 0.025832235239380604,
+          "n": 3720.0,
+          "n_eval": 744.0,
+          "buckets_excluded_from_eval": []
+        },
+        "labels_changed": 0,
+        "test_before": {
+          "brier": 0.1603469465092236,
+          "ece": 0.282384938171498
+        },
+        "test_after": {
+          "brier": 0.16031120735049664,
+          "ece": 0.28003279951348065
+        }
       },
       "confidence": {
         "high_confidence": 0.5,
@@ -1015,15 +1099,15 @@
       "task": "hate_binary",
       "latency": {
         "count": 500,
-        "total_s": 19.096,
-        "average_ms": 38.19140460003109,
-        "p50_ms": 36.94200000609271,
-        "p95_ms": 47.56842999522631,
-        "min_ms": 33.89210000023013,
-        "max_ms": 54.35130000114441,
-        "throughput_per_s": 26.183902123337614
+        "total_s": 17.023,
+        "average_ms": 34.04666240006918,
+        "p50_ms": 32.939999997324776,
+        "p95_ms": 42.74312499655933,
+        "min_ms": 30.582999999751337,
+        "max_ms": 53.44860000332119,
+        "throughput_per_s": 29.371454630394787
       },
-      "load_time_s": 0.915,
+      "load_time_s": 0.891,
       "display_name": "Laya (zero-shot, L3 2-class noul (is_hate))",
       "device": "cuda",
       "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
@@ -1058,8 +1142,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 12.950231099996017,
-        "throughput_per_s": 380.9198431988999,
+        "total_s": 12.768566099999589,
+        "throughput_per_s": 386.33938700447806,
         "single_sample_n": 500,
         "single_sample_label_match": 0.998
       },
@@ -1093,6 +1177,34 @@
         "hate_tp": 148,
         "hate_fp": 422,
         "hate_fn": 136
+      },
+      "recalibration": {
+        "fitted_on": "validation",
+        "fitted_rows": 3720,
+        "temperature": [
+          1.0,
+          1.0,
+          5.0
+        ],
+        "temperature_by_options": {
+          "noul:2": 5.0
+        },
+        "fit_report": {
+          "ece_before": 0.26150369512074245,
+          "ece_after": 0.11751308621766014,
+          "n": 3720.0,
+          "n_eval": 744.0,
+          "buckets_excluded_from_eval": []
+        },
+        "labels_changed": 0,
+        "test_before": {
+          "brier": 0.2544350702493412,
+          "ece": 0.4143822420433813
+        },
+        "test_after": {
+          "brier": 0.2315803013257653,
+          "ece": 0.4086698155280763
+        }
       },
       "confidence": {
         "high_confidence": 0.5,
@@ -1193,15 +1305,15 @@
       "task": "three_class",
       "latency": {
         "count": 500,
-        "total_s": 4.96,
-        "average_ms": 9.919135000032838,
-        "p50_ms": 9.33439999789698,
-        "p95_ms": 13.103475004754726,
-        "min_ms": 8.726199994271155,
-        "max_ms": 39.19060000043828,
-        "throughput_per_s": 100.81524245780398
+        "total_s": 4.166,
+        "average_ms": 8.331611600020551,
+        "p50_ms": 8.194300000468502,
+        "p95_ms": 9.182135001901768,
+        "min_ms": 7.38689999707276,
+        "max_ms": 11.583600004087202,
+        "throughput_per_s": 120.02479808318637
       },
-      "load_time_s": 1.397,
+      "load_time_s": 1.325,
       "display_name": "HateXplain BERT",
       "device": "cuda",
       "revision": null,
@@ -1232,8 +1344,8 @@
         "used": true,
         "n": 4933,
         "batch_size": 64,
-        "total_s": 7.117977400004747,
-        "throughput_per_s": 693.0339509081203,
+        "total_s": 6.817835900001228,
+        "throughput_per_s": 723.5433753985061,
         "single_sample_n": 500,
         "single_sample_label_match": 1.0
       },
@@ -1328,10 +1440,10 @@
       "operating_threshold": null,
       "operating_hate_f1": null,
       "operating_accuracy": null,
-      "load_time_s": 0.002,
+      "load_time_s": 0.001,
       "p50_latency_ms": 0.000100000761449337,
       "p95_latency_ms": 0.000200001522898674,
-      "average_latency_ms": 0.00012933304340556148,
+      "average_latency_ms": 0.0001309344871337802,
       "throughput_per_s": null
     },
     {
@@ -1354,11 +1466,11 @@
       "operating_threshold": 0.12865053932711581,
       "operating_hate_f1": 0.47577092511013214,
       "operating_accuracy": 0.8779647273464424,
-      "load_time_s": 1.109,
-      "p50_latency_ms": 0.44285000331001356,
-      "p95_latency_ms": 0.4745100039144745,
-      "average_latency_ms": 0.4481284002686152,
-      "throughput_per_s": 2231.5032910223595
+      "load_time_s": 1.042,
+      "p50_latency_ms": 0.460150000435533,
+      "p95_latency_ms": 0.505394998617703,
+      "average_latency_ms": 0.4666481999011012,
+      "throughput_per_s": 2142.9419425853016
     },
     {
       "model": "tfidf_balanced",
@@ -1380,11 +1492,11 @@
       "operating_threshold": 0.4941815719414073,
       "operating_hate_f1": 0.46732026143790856,
       "operating_accuracy": 0.88060004054328,
-      "load_time_s": 1.009,
-      "p50_latency_ms": 0.4429500004334841,
-      "p95_latency_ms": 0.48900499859882984,
-      "average_latency_ms": 0.4494575999851804,
-      "throughput_per_s": 2224.903973217879
+      "load_time_s": 1.008,
+      "p50_latency_ms": 0.4585999995470047,
+      "p95_latency_ms": 0.7510799998271976,
+      "average_latency_ms": 0.504482399817789,
+      "throughput_per_s": 1982.2297078375461
     },
     {
       "model": "laya",
@@ -1406,11 +1518,11 @@
       "operating_threshold": 0.6106,
       "operating_hate_f1": 0.3287671232876712,
       "operating_accuracy": 0.7599837826880195,
-      "load_time_s": 3.664,
-      "p50_latency_ms": 37.74100000009639,
-      "p95_latency_ms": 48.50710499886186,
-      "average_latency_ms": 38.71248860016931,
-      "throughput_per_s": 25.831457396816038
+      "load_time_s": 4.063,
+      "p50_latency_ms": 36.00240000378108,
+      "p95_latency_ms": 38.05372500355588,
+      "average_latency_ms": 36.15519159968244,
+      "throughput_per_s": 27.658545170281528
     },
     {
       "model": "laya_semantic",
@@ -1432,11 +1544,11 @@
       "operating_threshold": 0.5805,
       "operating_hate_f1": 0.3387334315169367,
       "operating_accuracy": 0.4932090006081492,
-      "load_time_s": 1.245,
-      "p50_latency_ms": 37.24759999749949,
-      "p95_latency_ms": 44.373489999634316,
-      "average_latency_ms": 38.19089439991512,
-      "throughput_per_s": 26.18425191954191
+      "load_time_s": 1.195,
+      "p50_latency_ms": 36.47194999939529,
+      "p95_latency_ms": 40.18875999718148,
+      "average_latency_ms": 36.86787580016244,
+      "throughput_per_s": 27.123884365358368
     },
     {
       "model": "laya_binary",
@@ -1458,11 +1570,11 @@
       "operating_threshold": 0.7503,
       "operating_hate_f1": 0.3374827109266943,
       "operating_accuracy": 0.9028988445165214,
-      "load_time_s": 1.056,
-      "p50_latency_ms": 37.91455000464339,
-      "p95_latency_ms": 48.02038500274647,
-      "average_latency_ms": 39.02666980033973,
-      "throughput_per_s": 25.623503238067595
+      "load_time_s": 0.963,
+      "p50_latency_ms": 33.83830000166199,
+      "p95_latency_ms": 36.17872500180965,
+      "average_latency_ms": 34.034674199996516,
+      "throughput_per_s": 29.3818002817874
     },
     {
       "model": "laya_noul",
@@ -1484,11 +1596,11 @@
       "operating_threshold": 0.749,
       "operating_hate_f1": 0.3281471004243281,
       "operating_accuracy": 0.9037097101155483,
-      "load_time_s": 0.915,
-      "p50_latency_ms": 36.94200000609271,
-      "p95_latency_ms": 47.56842999522631,
-      "average_latency_ms": 38.19140460003109,
-      "throughput_per_s": 26.183902123337614
+      "load_time_s": 0.891,
+      "p50_latency_ms": 32.939999997324776,
+      "p95_latency_ms": 42.74312499655933,
+      "average_latency_ms": 34.04666240006918,
+      "throughput_per_s": 29.371454630394787
     },
     {
       "model": "hatexplain",
@@ -1510,11 +1622,11 @@
       "operating_threshold": 0.12114835530519485,
       "operating_hate_f1": 0.36455696202531646,
       "operating_accuracy": 0.5894992904926009,
-      "load_time_s": 1.397,
-      "p50_latency_ms": 9.33439999789698,
-      "p95_latency_ms": 13.103475004754726,
-      "average_latency_ms": 9.919135000032838,
-      "throughput_per_s": 100.81524245780398
+      "load_time_s": 1.325,
+      "p50_latency_ms": 8.194300000468502,
+      "p95_latency_ms": 9.182135001901768,
+      "average_latency_ms": 8.331611600020551,
+      "throughput_per_s": 120.02479808318637
     }
   ],
   "calibration": {
@@ -2610,5 +2722,119 @@
         "hate_precision": 0.0
       }
     ]
+  },
+  "recalibration": {
+    "laya": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "temperature": [
+        1.2465780973434448,
+        1.0,
+        1.0
+      ],
+      "temperature_by_options": {
+        "choice:3-5": 1.2465780973434448
+      },
+      "fit_report": {
+        "ece_before": 0.12334815858078065,
+        "ece_after": 0.13686087563175076,
+        "n": 3720.0,
+        "n_eval": 744.0,
+        "buckets_excluded_from_eval": []
+      },
+      "labels_changed": 0,
+      "test_before": {
+        "brier": 0.11473980129941214,
+        "ece": 0.23072963713764444
+      },
+      "test_after": {
+        "brier": 0.12130258420839247,
+        "ece": 0.21645680113521182
+      }
+    },
+    "laya_semantic": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "temperature": [
+        3.090766191482544,
+        1.0,
+        1.0
+      ],
+      "temperature_by_options": {
+        "choice:3-5": 3.090766191482544
+      },
+      "fit_report": {
+        "ece_before": 0.269200013073841,
+        "ece_after": 0.12038435996577547,
+        "n": 3720.0,
+        "n_eval": 744.0,
+        "buckets_excluded_from_eval": []
+      },
+      "labels_changed": 0,
+      "test_before": {
+        "brier": 0.10724186022704238,
+        "ece": 0.2117685789580377
+      },
+      "test_after": {
+        "brier": 0.10552790143320495,
+        "ece": 0.23267502533954998
+      }
+    },
+    "laya_binary": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "temperature": [
+        1.855133295059204,
+        1.0,
+        1.0
+      ],
+      "temperature_by_options": {
+        "choice:2": 1.855133295059204
+      },
+      "fit_report": {
+        "ece_before": 0.08937399463786838,
+        "ece_after": 0.025832235239380604,
+        "n": 3720.0,
+        "n_eval": 744.0,
+        "buckets_excluded_from_eval": []
+      },
+      "labels_changed": 0,
+      "test_before": {
+        "brier": 0.1603469465092236,
+        "ece": 0.282384938171498
+      },
+      "test_after": {
+        "brier": 0.16031120735049664,
+        "ece": 0.28003279951348065
+      }
+    },
+    "laya_noul": {
+      "fitted_on": "validation",
+      "fitted_rows": 3720,
+      "temperature": [
+        1.0,
+        1.0,
+        5.0
+      ],
+      "temperature_by_options": {
+        "noul:2": 5.0
+      },
+      "fit_report": {
+        "ece_before": 0.26150369512074245,
+        "ece_after": 0.11751308621766014,
+        "n": 3720.0,
+        "n_eval": 744.0,
+        "buckets_excluded_from_eval": []
+      },
+      "labels_changed": 0,
+      "test_before": {
+        "brier": 0.2544350702493412,
+        "ece": 0.4143822420433813
+      },
+      "test_after": {
+        "brier": 0.2315803013257653,
+        "ece": 0.4086698155280763
+      }
+    }
   }
 }
