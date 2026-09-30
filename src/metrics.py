@@ -83,6 +83,9 @@ def latency_stats(latencies_ms: Sequence[float]) -> Dict[str, Any]:
     if values.size == 0:
         return {}
     total_s = float(values.sum() / 1000.0)
+    # Below ~10 ms of total measured time the Python loop and the timer dominate,
+    # so an "items/s" figure would be measuring the harness rather than the model.
+    throughput = float(values.size / total_s) if total_s >= 0.01 else None
     return {
         "count": int(values.size),
         "total_s": round(total_s, 3),
@@ -91,7 +94,7 @@ def latency_stats(latencies_ms: Sequence[float]) -> Dict[str, Any]:
         "p95_ms": float(np.percentile(values, 95)),
         "min_ms": float(values.min()),
         "max_ms": float(values.max()),
-        "throughput_per_s": float(values.size / total_s) if total_s else None,
+        "throughput_per_s": throughput,
     }
 
 
